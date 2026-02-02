@@ -3,14 +3,9 @@ import * as path from 'path';
 import * as xmlbuilder from 'xmlbuilder';
 import { ExportConfig } from './Common';
 
-/**
- * React2FGUI Parser - Styled Components to FGUI XML
- * Supports basic absolute positioning and styled text.
- */
 export default class UIPackage {
     private _cfg: ExportConfig;
     private _buildId: string;
-    private _nextItemIndex: number = 0;
 
     constructor(cfg: ExportConfig) {
         this._cfg = cfg;
@@ -19,87 +14,76 @@ export default class UIPackage {
 
     public async exportPackage(): Promise<void> {
         console.log(`🚀 Transforming React into FGUI: ${this._cfg.packName}`);
-        
         const code = await fs.readFile(this._cfg.reactFile, 'utf-8');
         const componentXml = this.parseReactToFgui(code);
-        
         const packagePath = path.join(this._cfg.outPath, this._cfg.packName);
         await fs.ensureDir(packagePath);
-        
-        // Generate package.xml
-        const pkgDesc = xmlbuilder.create('packageDescription');
-        pkgDesc.att('id', this._buildId);
-        const resNode = pkgDesc.ele('resources');
-        resNode.ele('component', { id: 'n0', name: 'main.xml', path: '/', exported: 'true' });
-        
+        const pkgDesc = xmlbuilder.create('packageDescription').att('id', this._buildId);
+        pkgDesc.ele('resources').ele('component', { id: 'n0', name: 'main.xml', path: '/', exported: 'true' });
         await fs.writeFile(path.join(packagePath, 'package.xml'), pkgDesc.end({ pretty: true }));
         await fs.writeFile(path.join(packagePath, 'main.xml'), componentXml);
-        
         console.log(`✅ Success! Package generated at: ${packagePath}`);
     }
 
     private parseReactToFgui(code: string): string {
-        const component = xmlbuilder.create('component');
-        component.att('size', '1440,1024'); // Default canvas size
+        const component = xmlbuilder.create('component').att('size', '1440,1024');
         const displayList = component.ele('displayList');
-
-        // 1. Extract Styled Component definitions (very basic regex for demo)
-        const styledRegex = /const\s+(\w+)\s+=\s+styled\.(\w+)`([\s\S]*?)`/g;
         const styleMap: { [key: string]: any } = {};
-        let match;
-        while ((match = styledRegex.exec(code)) !== null) {
-            const [_, name, tag, css] = match;
-            styleMap[name] = this.parseCss(css);
+        
+        // 1. Extract Styled Components styles
+        const styledRegex = /const\s+Styled(\w+)\s+=\s+styled\.(\w+)`([\s\S]*?)`/g;
+        let sMatch;
+        while ((sMatch = styledRegex.exec(code)) !== null) {
+            styleMap[sMatch[1]] = this.parseCss(sMatch[3]);
         }
 
-        // 2. Extract JSX nodes (basic scan)
-        const jsxRegex = /<(\w+)([^>]*)>(.*?)<\/\1>/g;
+        // 2. Iterate through all JSX tags in the code
+        // Use a simpler approach: find all <Styled... tags globally
+        const jsxTagRegex = /<Styled(\w+)/g;
+        let tagMatch;
         let nodeIndex = 1;
-        while ((match = jsxRegex.exec(code)) !== null) {
-            const [_, compName, attrs, content] = match;
-            const styles = styleMap[compName] || {};
+        while ((tagMatch = jsxTagRegex.exec(code)) !== null) {
+            const name = tagMatch[1];
+            if (name === 'Shoppingcart') continue; // Skip root for now or handle separately
+
+            const styles = styleMap[name] || {};
             const id = `n${nodeIndex++}`;
+            const xy = `${styles.left || 0},${styles.top || 0}`;
+            const size = `${styles.width || 100},${styles.height || 30}`;
+
+            // Find content between this tag and its closing tag
+            const startPos = tagMatch.index;
+            const openTagEnd = code.indexOf('>', startPos);
+            const closeTag = `</Styled${name}>`;
+            const endPos = code.indexOf(closeTag, openTagEnd);
             
-            if (compName.toLowerCase().includes('button')) {
-                displayList.ele('component', {
-                    id, name: compName, xy: `${styles.left || 0},${styles.top || 0}`,
-                    size: `${styles.width || 100},${styles.height || 50}`,
-                    extention: 'Button'
-                }).ele('Button', { title: content.trim() });
-            } else if (compName.toLowerCase().includes('span') || content.trim().length > 0) {
-                displayList.ele('text', {
-                    id, name: compName, xy: `${styles.left || 0},${styles.top || 0}`,
-                    size: `${styles.width || 200},${styles.height || 30}`,
-                    fontSize: styles.fontSize || '12',
-                    color: styles.color || '#000000',
-                    text: content.trim()
-                });
+            let cleanText = "";
+            if (endPos !== -1) {
+                const content = code.substring(openTagEnd + 1, endPos);
+                // Remove all nested styled components to get raw text
+                cleanText = content.replace(/<Styled\w+.*?>.*?<\/Styled\w+>/gs, '').replace(/<.*?>/gs, '').trim();
+            }
+
+            if (name.toLowerCase().includes('button')) {
+                displayList.ele('component', { id, name, xy, size, extention: 'Button' }).ele('Button', { title: cleanText });
+            } else if (cleanText.length > 0) {
+                displayList.ele('text', { id, name, xy, size, fontSize: styles.fontSize || '12', color: styles.color || '#000000', text: cleanText });
             } else {
-                displayList.ele('graph', {
-                    id, name: compName, xy: `${styles.left || 0},${styles.top || 0}`,
-                    size: `${styles.width || 100},${styles.height || 100}`,
-                    type: 'rect',
-                    fillColor: styles.background || '#cccccc'
-                });
+                displayList.ele('graph', { id, name, xy, size, type: 'rect', fillColor: styles.background || '#cccccc' });
             }
         }
-
         return component.end({ pretty: true });
     }
 
     private parseCss(css: string): any {
         const styles: any = {};
-        const rules = css.split(';');
-        rules.forEach(rule => {
-            const [prop, value] = rule.split(':').map(s => s.trim());
-            if (!prop || !value) return;
-            if (prop === 'width' || prop === 'height' || prop === 'left' || prop === 'top') {
-                styles[prop] = value.replace('px', '');
-            } else if (prop === 'color' || prop === 'background') {
-                styles[prop] = value;
-            } else if (prop === 'font-size') {
-                styles['fontSize'] = value.replace('px', '');
-            }
+        css.split(';').forEach(rule => {
+            const parts = rule.split(':');
+            if (parts.length < 2) return;
+            const prop = parts[0].trim(), val = parts[1].trim();
+            if (['width', 'height', 'left', 'top'].includes(prop)) styles[prop] = val.replace('px', '');
+            else if (['color', 'background'].includes(prop)) styles[prop] = val;
+            else if (prop === 'font-size') styles['fontSize'] = val.replace('px', '');
         });
         return styles;
     }

@@ -1,24 +1,58 @@
 # React2FGUI 🚀
 
-> **A tool to convert Figma-exported React (Styled Components) directly into FairyGUI project packages.**
+> **A powerful tool to convert Figma-exported React (Styled Components) directly into FairyGUI project packages.**
 
-Inspired by `psd2fgui`, this tool bypasses the need for manual renaming and PSD middle-man files. It parses absolute-positioned React code and maps it to FGUI components.
+This tool automates the bridge between UI designers (Figma) and game developers (FairyGUI), bypassing manual renaming or PSD middle-man files.
+
+## 🎯 Project Goal
+Enable a "One-Click" workflow from Figma design to a fully functional FairyGUI `.fui` package.
+
+## 🛠️ Prerequisites
+
+This tool relies on the **Figma to Code (AI Export)** plugin to generate the source data.
+
+1.  **Figma Plugin**: [Figma to Code (AI Export)](https://www.figma.com/community/plugin/1590340205277776745/figma-to-code-ai-export)
+2.  **Export Configuration**: 
+    To ensure compatible output, please use the following settings in the plugin:
+    *   **Format**: `styled-components`
+    *   **Styling Options**: 
+        *   [x] Layer names
+        *   [x] Color Variables
+        *   [x] Embed Images
+        *   [x] Embed Vectors
+
+![Figma Export Configuration](./docs/img/figma_config.png)
 
 ## 🏗️ Architecture
 
-1. **Parser**: Analyzes React/Styled-Components code to extract nodes, styles, and hierarchy.
-2. **Mapper**: Maps CSS/HTML semantics to FGUI XML elements (`GButton`, `GTextField`, `GGraph`, etc.).
+1. **Parser**: Analyzes `styled-components` React code to extract nodes, styles (CSS), and hierarchy.
+2. **Mapper**: Automatically maps React component semantics to FGUI elements:
+    *   `StyledButton` -> `GButton`
+    *   `StyledSpan` / Text content -> `GTextField`
+    *   `StyledDiv` / Containers -> `GGraph` (Rect) or `GComponent`
 3. **Generator**: Produces FGUI-compatible `package.xml` and component `.xml` files.
 
-## 🛠️ Usage (Planned)
+## 🚀 Usage
 
 ```bash
-node react2fgui.js input.tsx --out ./MyFguiProject
+# Install dependencies
+bun install
+
+# Link the CLI tool
+bun link
+
+# Run conversion
+# Syntax: react2fgui <reactFile> <outPath> <packName> <mainComponentName>
+react2fgui input.tsx ./output MyPackage MainUI
 ```
 
-## 🎯 Target Support
-- [ ] Absolute coordinate mapping
-- [ ] Text styles (font, color, alignment)
-- [ ] Rect/Shape mapping to GGraph
-- [ ] Button/Input semantic detection based on Styled Component names
-- [ ] Image/SVG extraction
+## 🎯 Features
+- [x] **Absolute Positioning**: Accurate mapping of `left`, `top`, `width`, and `height`.
+- [x] **Smart Semantics**: Automatic detection of Buttons and Input fields based on component names.
+- [x] **Text Sync**: Full support for font size, color, and raw text extraction.
+- [x] **CLI Tool**: Quick validation and batch processing.
+- [ ] **SVG Support**: Auto-extracting `<svg>` paths into FGUI shapes (In Progress).
+- [ ] **FGUI Plugin**: Ready-to-use plugin for the FGUI Editor (Planned).
+
+## 📄 License
+MIT
