@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<component size="1440,1024">
+  <displayList>
+    <loader id="n1" name="Tomato" xy="96,301" size="821,159" url="ui://r2f9gdj0res0" fill="scaleFree"/>
+    <text id="n2" name="Heirloomtomato" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Heirloom tomato"/>
+    <text id="n3" name="599" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$5.99"/>
+    <text id="n4" name="599lb" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$5.99 / lb"/>
+    <loader id="n5" name="Inputfield" xy="184,95" size="128,40" url="ui://r2f9gdj0res1" fill="scaleFree"/>
+    <text id="n6" name="1lb" xy="0,0" size="100,30" fontSize="12" color="#000000" text="1 lb"/>
+    <loader id="n8" name="Ginger" xy="96,491" size="821,159" url="ui://r2f9gdj0res2" fill="scaleFree"/>
+    <text id="n9" name="Organicginger" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Organic ginger"/>
+    <text id="n10" name="1299lb" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$12.99 / lb"/>
+    <loader id="n11" name="Inputfield01" xy="184,95" size="128,40" url="ui://r2f9gdj0res3" fill="scaleFree"/>
+    <text id="n12" name="05lb" xy="0,0" size="100,30" fontSize="12" color="#000000" text="0.5 lb"/>
+    <text id="n13" name="650" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$6.50"/>
+    <loader id="n15" name="Onion" xy="96,681" size="821,159" url="ui://r2f9gdj0res4" fill="scaleFree"/>
+    <text id="n16" name="Sweetonion" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Sweet onion"/>
+    <text id="n17" name="299lb" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$2.99 / lb"/>
+    <loader id="n18" name="Inputfield02" xy="184,95" size="128,40" url="ui://r2f9gdj0res5" fill="scaleFree"/>
+    <text id="n19" name="5lb" xy="0,0" size="100,30" fontSize="12" color="#000000" text="5 lb"/>
+    <text id="n20" name="1495" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$14.95"/>
+    <loader id="n22" name="Summary" xy="949,301" size="395,318" url="ui://r2f9gdj0res6" fill="scaleFree"/>
+    <text id="n23" name="Ordersummary" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Order summary"/>
+    <text id="n24" name="Subtotal" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Subtotal"/>
+    <text id="n25" name="2744" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$27.44"/>
+    <text id="n26" name="Shipping" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Shipping"/>
+    <text id="n27" name="399" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$3.99"/>
+    <text id="n28" name="Tax" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Tax"/>
+    <text id="n29" name="200" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$2.00"/>
+    <text id="n30" name="Total" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Total"/>
+    <text id="n31" name="3343" xy="0,0" size="100,30" fontSize="12" color="#000000" text="$33.43"/>
+    <loader id="n32" name="Button" xy="24,246" size="347,48" url="ui://r2f9gdj0res7" fill="scaleFree"/>
+    <text id="n33" name="Continuetopayment" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Continue to payment"/>
+    <graph id="n34" name="Pageheading" xy="0,112" size="1440,149" type="rect" fillColor="white"/>
+    <text id="n35" name="3items" xy="0,0" size="100,30" fontSize="12" color="#000000" text="3 items"/>
+    <text id="n36" name="Basket" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Basket"/>
+    <graph id="n37" name="Navigation" xy="0,0" size="1440,112" type="rect" fillColor="#cccccc"/>
+    <text id="n38" name="WorldPeas" xy="0,0" size="100,30" fontSize="12" color="#000000" text="World Peas"/>
+    <text id="n39" name="Shop" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Shop"/>
+    <text id="n40" name="Newstand" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Newstand"/>
+    <text id="n41" name="Whoweare" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Who we are"/>
+    <text id="n42" name="Myprofile" xy="0,0" size="100,30" fontSize="12" color="#000000" text="My profile"/>
+    <component id="n43" name="Cartbutton" xy="1218,32" size="126,48" extention="Button">
+      <Button title=""/>
+    </component>
+    <text id="n44" name="Basket3" xy="0,0" size="100,30" fontSize="12" color="#000000" text="Basket (3)"/>
+  </displayList>
+</component>
