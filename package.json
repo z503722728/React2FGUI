@@ -2,6 +2,9 @@
   "name": "react2fgui",
   "version": "1.0.0",
   "description": "Figma-exported React to FairyGUI converter plugin",
+  "bin": {
+    "react2fgui": "bin/cli.js"
+  },
   "main": "bin/main.js",
   "scripts": {
     "build": "tsc",
