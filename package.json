@@ -1,0 +1,19 @@
+{
+  "name": "react2fgui",
+  "version": "1.0.0",
+  "description": "Figma-exported React to FairyGUI converter plugin",
+  "main": "bin/main.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "xmlbuilder": "^15.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/fs-extra": "^11.0.4",
+    "typescript": "^5.3.3"
+  }
+}
