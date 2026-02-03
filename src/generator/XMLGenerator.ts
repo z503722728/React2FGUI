@@ -28,11 +28,8 @@ export class XMLGenerator {
                 case ObjectType.Loader:
                     eleName = 'loader';
                     if (node.src) {
-                        // Resource reference logic
-                        const resId = this.findResourceIdBySrc(node.src);
-                        if (resId) {
-                            attributes.url = `ui://${buildId}${resId}`;
-                        }
+                        // In V2, node.src holds the internal resource ID (resId)
+                        attributes.url = `ui://${buildId}${node.src}`;
                     }
                     break;
                 case ObjectType.Button:
@@ -40,7 +37,7 @@ export class XMLGenerator {
                     eleName = 'component';
                     break;
                 case ObjectType.InputText:
-                    eleName = 'text'; // FGUI uses <text> with specific flags for input
+                    eleName = 'text'; 
                     attributes.input = "true";
                     break;
             }
@@ -80,10 +77,5 @@ export class XMLGenerator {
         publish.ele('atlas', { name: 'Default', index: 0 });
 
         return pkgDesc.end({ pretty: true });
-    }
-
-    private findResourceIdBySrc(src: string): string | null {
-        // This is a placeholder; actual mapping is handled in UIPackage integration phase
-        return null; 
     }
 }
