@@ -82,25 +82,46 @@ export default class UIPackage {
             styleMap[sMatch[1]] = this.parseCss(sMatch[3]);
         }
 
-        // 2. Scan for Styled Tags
-        // We use a broader regex to capture attributes like src
-        const jsxTagRegex = /<(Styled\w+)([^>]*?)(\/?)>/g;
+        // 2. Scan for All Tags (both Styled and standard ones like div)
+        const allTagsRegex = /<(\w+)([^>]*?)(\/?)>/g;
         let tagMatch;
         let nodeIndex = 1;
-        while ((tagMatch = jsxTagRegex.exec(code)) !== null) {
-            const tagName = tagMatch[1];
+        while ((tagMatch = allTagsRegex.exec(code)) !== null) {
+            const fullTagName = tagMatch[1];
             const tagAttrs = tagMatch[2];
             const isSelfClosing = tagMatch[3] === '/';
             
-            if (tagName === 'StyledShoppingcart') continue; 
+            // Skip non-UI tags
+            if (fullTagName === 'StyledShoppingcart' || fullTagName === 'ShoppingCart') continue; 
+            if (fullTagName === 'React' || fullTagName === 'svg' || fullTagName === 'path' || fullTagName === 'g' || fullTagName === 'defs' || fullTagName === 'clipPath' || fullTagName === 'rect') continue;
 
-            let styles = styleMap[tagName];
-            if (!styles) {
-                const possibleNames = [`${tagName}span`, `${tagName}div`, `${tagName}button`].map(n => n.toLowerCase());
+            const isStyledTag = fullTagName.startsWith('Styled');
+            let baseName = isStyledTag ? fullTagName : "";
+            
+            // Handle regular tags like <div data-svg-wrapper>
+            if (!isStyledTag && !tagAttrs.includes('data-svg-wrapper')) {
+                // If it's a plain div/span without specific FGUI-mapped attributes, we might skip or handle as generic
+                if (fullTagName === 'div' || fullTagName === 'span' || fullTagName === 'button') {
+                    // fall through
+                } else {
+                    continue;
+                }
+            }
+
+            let styles = styleMap[fullTagName];
+            if (!styles && isStyledTag) {
+                const possibleNames = [`${fullTagName}span`, `${fullTagName}div`, `${fullTagName}button`].map(n => n.toLowerCase());
                 const foundKey = Object.keys(styleMap).find(k => possibleNames.includes(k.toLowerCase()));
                 if (foundKey) styles = styleMap[foundKey];
             }
             styles = styles || {};
+
+            // Parse inline style if exists
+            const inlineStyleMatch = tagAttrs.match(/style="([^"]+)"/);
+            if (inlineStyleMatch) {
+                const inlineStyles = this.parseCss(inlineStyleMatch[1].replace(/;/g, ';'));
+                styles = { ...styles, ...inlineStyles };
+            }
 
             const id = `n${nodeIndex++}`;
             const xy = `${styles.left || 0},${styles.top || 0}`;
@@ -123,7 +144,7 @@ export default class UIPackage {
                 });
 
                 displayList.ele('loader', {
-                    id, name: tagName, xy, size,
+                    id, name: fullTagName, xy, size,
                     url: `ui://${this._buildId}${resId}`,
                     fill: 'scaleFree'
                 });
@@ -133,7 +154,7 @@ export default class UIPackage {
             // Handle content if not self-closing
             let content = "";
             if (!isSelfClosing) {
-                const closeTag = `</${tagName}>`;
+                const closeTag = `</${fullTagName}>`;
                 const startPos = tagMatch.index + tagMatch[0].length;
                 const endPos = code.indexOf(closeTag, startPos);
                 if (endPos !== -1) {
@@ -142,9 +163,13 @@ export default class UIPackage {
             }
 
             // --- SVG EXTRACTION ---
+            let svgData = "";
             const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
             if (svgMatch) {
-                const svgData = svgMatch[0];
+                svgData = svgMatch[0];
+            }
+
+            if (svgData) {
                 const resId = this.getNextResId();
                 const fileName = `icon_${id}.svg`;
                 
@@ -156,7 +181,7 @@ export default class UIPackage {
                 });
 
                 displayList.ele('loader', {
-                    id, name: tagName, xy, size,
+                    id, name: fullTagName, xy, size,
                     url: `ui://${this._buildId}${resId}`,
                     fill: 'scaleFree'
                 });
@@ -164,14 +189,15 @@ export default class UIPackage {
             }
 
             // --- TEXT OR GRAPH ---
-            const cleanText = content.replace(/<Styled\w+.*?>.*?<\/Styled\w+>/gs, '').replace(/<.*?>/gs, '').trim();
+            // Only process if it was a Styled component or had text
+            const cleanText = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/gs, '').trim();
 
-            if (tagName.toLowerCase().includes('button')) {
-                displayList.ele('component', { id, name: tagName, xy, size, extention: 'Button' }).ele('Button', { title: cleanText });
+            if (fullTagName.toLowerCase().includes('button')) {
+                displayList.ele('component', { id, name: fullTagName, xy, size, extention: 'Button' }).ele('Button', { title: cleanText });
             } else if (cleanText.length > 0) {
-                displayList.ele('text', { id, name: tagName, xy, size, fontSize: styles.fontSize || '12', color: styles.color || '#000000', text: cleanText });
-            } else {
-                displayList.ele('graph', { id, name: tagName, xy, size, type: 'rect', fillColor: styles.background || '#cccccc' });
+                displayList.ele('text', { id, name: fullTagName, xy, size, fontSize: styles.fontSize || '12', color: styles.color || '#000000', text: cleanText });
+            } else if (isStyledTag) {
+                displayList.ele('graph', { id, name: fullTagName, xy, size, type: 'rect', fillColor: styles.background || '#cccccc' });
             }
         }
         return component.end({ pretty: true });
@@ -179,10 +205,12 @@ export default class UIPackage {
 
     private parseCss(css: string): any {
         const styles: any = {};
-        css.split(';').forEach(rule => {
+        // Handle both standard CSS and React inline style (key: value)
+        const rules = css.includes(';') ? css.split(';') : css.split(',');
+        rules.forEach(rule => {
             const parts = rule.split(':');
             if (parts.length < 2) return;
-            const prop = parts[0].trim(), val = parts[1].trim();
+            const prop = parts[0].trim().toLowerCase(), val = parts[1].trim().replace(/['"]/g, '');
             if (['width', 'height', 'left', 'top'].includes(prop)) styles[prop] = val.replace('px', '');
             else if (['color', 'background'].includes(prop)) styles[prop] = val;
             else if (prop === 'font-size') styles['fontSize'] = val.replace('px', '');
