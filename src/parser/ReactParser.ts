@@ -63,7 +63,9 @@ export class ReactParser {
             // Robust Coordinate parsing: check styles, then attributes
             const getCoord = (key: string, def: string) => {
                 const val = styles[key] || styles[key.toLowerCase()] || "";
-                return val ? parseInt(val) : parseInt(def);
+                if (!val) return parseInt(def);
+                // Handle potential "px" suffix if it somehow leaked through
+                return parseInt(val.toString().replace('px', ''));
             };
 
             const node: UINode = {
@@ -121,7 +123,8 @@ export class ReactParser {
         
         // Text: Has text content AND doesn't look like a container
         const cleanText = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/gs, '').trim();
-        // Improvement: if it's a Styled tag but only contains text (no children tags), it's definitely a Text node
+        
+        // If it's a Styled tag AND has text content AND no other complex UI tags inside, it's a Text node
         if (name.startsWith('Styled') && cleanText.length > 0 && !content.includes('<Styled') && !content.includes('<div')) {
             return ObjectType.Text;
         }
