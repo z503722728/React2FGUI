@@ -35,9 +35,11 @@ export class PropertyMapper {
             case ObjectType.Loader:
                 this.mapLoaderProperties(node, attr);
                 break;
-            case ObjectType.Graph:
-                this.mapGraphProperties(node, attr);
-                break;
+        }
+
+        // 3. Map Visual Container Properties (for Graph OR Component/Group with visual styles)
+        if (node.type === ObjectType.Graph || node.type === ObjectType.Component || node.type === ObjectType.Group) {
+            this.mapGraphProperties(node, attr);
         }
 
         return attr;
@@ -56,6 +58,13 @@ export class PropertyMapper {
         if (node.text) {
             attr.text = node.text;
         }
+
+        // Vertical Alignment
+        const justifyContent = s['justify-content'] || s.justifyContent;
+        const alignItems = s['align-items'] || s.alignItems;
+        if (justifyContent === 'center' || alignItems === 'center') {
+            attr.vAlign = VertAlignType.middle;
+        }
     }
 
     private mapLoaderProperties(node: UINode, attr: Record<string, string>): void {
@@ -71,7 +80,43 @@ export class PropertyMapper {
     private mapGraphProperties(node: UINode, attr: Record<string, string>): void {
         const s = node.styles;
         attr.type = "rect";
-        attr.fillColor = this.formatColor(s.background || s.backgroundColor || "#cccccc");
+        const bgColor = s.background || s.backgroundColor;
+        if (bgColor && bgColor !== 'transparent' && bgColor !== 'none') {
+            attr.fillColor = this.formatColor(bgColor);
+        }
+        
+        if (s['border-radius'] || s.borderRadius) {
+            attr.corner = (s['border-radius'] || s.borderRadius).toString().replace('px', '');
+        }
+
+        // 4. Map Stroke (lineSize, lineColor)
+        const strokeColor = s['outline-color'] || s.outlineColor || s['border-color'] || s.borderColor;
+        const strokeSize = s['outline-width'] || s.outlineWidth || s['border-width'] || s.borderWidth;
+        
+        if (strokeColor) attr.lineColor = this.formatColor(strokeColor);
+        if (strokeSize) attr.lineSize = strokeSize.toString().replace('px', '');
+
+        // Fallback to shorthand (e.g. "outline: 2px #E6E6E6 solid")
+        const shorthand = s.outline || s.border;
+        if (shorthand && shorthand !== 'none') {
+            // Split by spaces that are NOT inside parentheses
+            const parts = shorthand.toString().split(/\s+(?![^\(]*\))/g);
+            if (parts) {
+                parts.forEach(p => {
+                    const lp = p.toLowerCase();
+                    // Check for dimensions: "2px", "2.5px" or just "2" (unitless)
+                    if (lp.endsWith('px') || lp.match(/^\d+(\.\d+)?$/)) {
+                        const size = Math.round(parseFloat(lp)).toString();
+                        if (!attr.lineSize) attr.lineSize = size;
+                    } else if (lp.match(/^#|^rgb|^rgba|^[a-z]+$/i) && lp !== 'solid' && lp !== 'none' && lp !== 'dashed' && lp !== 'dotted') {
+                        const color = this.formatColor(p);
+                        if (color.startsWith('#') && color.length > 1 && !attr.lineColor) {
+                            attr.lineColor = color;
+                        }
+                    }
+                });
+            }
+        }
     }
 
     /**
@@ -119,11 +164,15 @@ export class PropertyMapper {
         }
 
         if (color.startsWith('rgba')) {
-            const matches = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            const matches = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d\.]+))?\)/);
             if (matches) {
                 const r = parseInt(matches[1]).toString(16).padStart(2, '0');
                 const g = parseInt(matches[2]).toString(16).padStart(2, '0');
                 const b = parseInt(matches[3]).toString(16).padStart(2, '0');
+                if (matches[4]) {
+                    const a = Math.round(parseFloat(matches[4]) * 255).toString(16).padStart(2, '0');
+                    return `#${a}${r}${g}${b}`;
+                }
                 return `#${r}${g}${b}`;
             }
         }

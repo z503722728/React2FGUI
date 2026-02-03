@@ -59,7 +59,7 @@ class XMLGenerator {
             const tempNode = { id: 'n0', name: 'n0', styles: rootStyles, type: FGUIEnum_1.ObjectType.Graph, width, height, x: 0, y: 0 };
             const attrs = mapper.mapAttributes(tempNode);
             // Check if we have visual properties
-            if (attrs.fillColor || (attrs.strokeColor && attrs.strokeSize)) {
+            if (attrs.fillColor || (attrs.lineColor && attrs.lineSize)) {
                 // Yes, generate a background shape
                 // Ensure it fills the component
                 attrs.size = `${width},${height}`;
@@ -126,7 +126,7 @@ class XMLGenerator {
                 case FGUIEnum_1.ObjectType.Group:
                     // If it's a container that wasn't extracted, we flatten its children.
                     // But first, if the container itself has visual styles, we must render a background graph.
-                    if (attributes.fillColor || (attributes.strokeColor && attributes.strokeSize)) {
+                    if (attributes.fillColor || (attributes.lineColor && attributes.lineSize)) {
                         parentEle.ele('graph', attributes);
                     }
                     if (node.children && node.children.length > 0) {

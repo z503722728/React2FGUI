@@ -252,10 +252,9 @@ class ReactParser {
         const lowerName = name.toLowerCase();
         if (lowerName.includes('button'))
             return FGUIEnum_1.ObjectType.Button;
-        if (lowerName.includes('input'))
-            return FGUIEnum_1.ObjectType.InputText;
         if (lowerName === 'img')
             return FGUIEnum_1.ObjectType.Image;
+        // Skip direct Input detection here, moved into the "Styled" block below for more nuance
         // Image/SVG Detection (Highest priority after explicit tags)
         const isImage = attrs.includes('data-svg-wrapper') ||
             attrs.includes('src="data:image/') ||
@@ -268,9 +267,14 @@ class ReactParser {
             return FGUIEnum_1.ObjectType.Image;
         }
         if (name.startsWith('Styled') || name === 'div' || name === 'span' || name.match(/^h[1-6]$/) || name === 'p') {
+            const hasTags = /<[a-z][\s\S]*>/i.test(content);
+            // Special case: "Input" in name
+            // If it has "input" in name but is a complex container (has tags), treat as Component
+            if (lowerName.includes('input') && !hasTags) {
+                return FGUIEnum_1.ObjectType.InputText;
+            }
             // Check if it should be Text
             // If it has no child tags (simple text)
-            const hasTags = /<[a-z][\s\S]*>/i.test(content);
             if (!hasTags && content.trim().length > 0) {
                 return FGUIEnum_1.ObjectType.Text;
             }

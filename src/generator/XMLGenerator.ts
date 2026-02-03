@@ -26,7 +26,7 @@ export class XMLGenerator {
             const attrs = mapper.mapAttributes(tempNode);
             
             // Check if we have visual properties
-            if (attrs.fillColor || (attrs.strokeColor && attrs.strokeSize)) {
+            if (attrs.fillColor || (attrs.lineColor && attrs.lineSize)) {
                 // Yes, generate a background shape
                 // Ensure it fills the component
                 attrs.size = `${width},${height}`;
@@ -95,7 +95,7 @@ export class XMLGenerator {
                 case ObjectType.Group:
                     // If it's a container that wasn't extracted, we flatten its children.
                     // But first, if the container itself has visual styles, we must render a background graph.
-                    if (attributes.fillColor || (attributes.strokeColor && attributes.strokeSize)) {
+                    if (attributes.fillColor || (attributes.lineColor && attributes.lineSize)) {
                         parentEle.ele('graph', attributes);
                     }
 

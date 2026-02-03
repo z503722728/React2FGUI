@@ -38,11 +38,15 @@ export class SubComponentExtractor {
                 // 1. It is a Button (functionally distinct)
                 // 2. It has more than 2 children (e.g., a card or complex group)
                 // 3. It contains children that were themselves already extracted (nested hierarchy)
+                // 4. It has a background/border AND children (Significant visual group)
                 
                 const hasNestedExtracted = child.children.some(c => c.asComponent);
+                const hasVisuals = (child.styles.background || child.styles.backgroundColor || child.styles.border || child.styles.outline);
+                
                 const isSignificant = child.children.length > 2 || 
                     child.type === ObjectType.Button || 
-                    hasNestedExtracted;
+                    hasNestedExtracted ||
+                    (hasVisuals && child.children.length > 0);
 
                 if (isSignificant) {
                     // Extract!
