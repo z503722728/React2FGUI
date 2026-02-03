@@ -33,12 +33,20 @@ export class XMLGenerator {
                     }
                     break;
                 case ObjectType.Button:
-                case ObjectType.Component:
                     eleName = 'component';
+                    break;
+                case ObjectType.Component:
+                    // If we reach here, we'll use a graph as a placeholder since sub-component XMLs aren't generated yet
+                    eleName = 'graph';
+                    attributes.type = "rect";
+                    attributes.fillColor = node.styles.background || "#eeeeee";
                     break;
                 case ObjectType.InputText:
                     eleName = 'text'; 
                     attributes.input = "true";
+                    break;
+                case ObjectType.Graph:
+                    eleName = 'graph';
                     break;
             }
 

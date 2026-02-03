@@ -108,17 +108,25 @@ export class ReactParser {
         }
         
         // 4. Text check: If it has direct text content after stripping HTML
+        // Also ensure it doesn't contain nested divs that would make it a component
         const cleanText = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/gs, '').trim();
         if ((lowerName.includes('text') || lowerName.includes('span') || cleanText.length > 0) && !content.includes('<div') && !content.includes('<Styled')) {
             return ObjectType.Text;
         }
         
-        // 5. Default to Graph if it's a styled container with no children, otherwise Component
-        if (content.trim() === "" && name.startsWith('Styled')) {
-            return ObjectType.Graph;
+        // 5. Styled Tag Defaulting Logic
+        if (name.startsWith('Styled')) {
+            // If it's a styled container but has no UI children, it's just a shape (Graph)
+            if (!content.includes('<Styled') && !content.includes('<div') && !content.includes('<svg')) {
+                return ObjectType.Graph;
+            }
+            // If it contains other elements, treat as a generic Component (will be flattened or exported later)
+            // But if it's just a wrapper for a known leaf, let it be a Component for now
+            return ObjectType.Component;
         }
 
-        return ObjectType.Component;
+        // 6. Generic HTML tag
+        return ObjectType.Graph; 
     }
 
     private parseInlineStyle(styleStr: string): Record<string, string> {
