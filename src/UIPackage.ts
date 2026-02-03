@@ -49,7 +49,9 @@ export default class UIPackage {
                 if (res.isBase64) {
                     const base64Parts = res.data.split(',');
                     const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
-                    await fs.writeFile(path.join(imgPath, res.name), Buffer.from(base64Data, 'base64'));
+                    // Clean possible whitespace or garbage
+                    const buffer = Buffer.from(base64Data.trim(), 'base64');
+                    await fs.writeFile(path.join(imgPath, res.name), buffer);
                 } else {
                     await fs.writeFile(path.join(imgPath, res.name), res.data);
                 }
@@ -79,7 +81,7 @@ export default class UIPackage {
     <graph id="n1" name="bg" xy="0,0" size="${node.width},${node.height}" type="rect" fillColor="${node.styles.background || '#426B1F'}">
       <gearColor controller="button" pages="0,1,2,3" values="${node.styles.background || '#426B1F'},#333333,${node.styles.background || '#426B1F'},#333333"/>
     </graph>
-    <text id="n2" name="title" xy="0,0" size="${node.width},${node.height}" fontSize="${node.styles.fontSize || 12}" color="${node.styles.color || '#ffffff'}" align="center" vAlign="middle" autoSize="none" text="${node.text || ''}">
+    <text id="n2" name="title" xy="0,0" size="${node.width},${node.height}" fontSize="${node.styles['font-size'] || node.styles.fontSize || 12}" color="${node.styles.color || '#ffffff'}" align="center" vAlign="middle" autoSize="none" text="${node.text || ''}">
       <relation target="" sidePair="width-width,height-height"/>
     </text>
   </displayList>
@@ -87,7 +89,7 @@ export default class UIPackage {
 </component>`;
                 
                 const fileName = `${node.name}.xml`;
-                await fs.writeFile(path.join(packagePath, fileName), buttonXml);
+                await fs.writeFile(path.join(fileName.includes('..') ? 'error.xml' : path.join(packagePath, fileName)), buttonXml);
                 
                 // Add to resources so it's registered in package.xml
                 const resId = this.getNextResId();
@@ -113,7 +115,7 @@ export default class UIPackage {
     }
 
     private processResources(nodes: UINode[]): void {
-        const uniqueSrcMap = new Map<string, string>(); // Avoid duplicate resource exports
+        const uniqueSrcMap = new Map<string, string>(); 
 
         nodes.forEach(node => {
             if (node.src && node.type !== ObjectType.Button) {
@@ -124,7 +126,8 @@ export default class UIPackage {
 
                 const resId = this.getNextResId();
                 const isBase64 = node.src.startsWith('data:image');
-                const ext = isBase64 ? (node.src.match(/data:image\/(png|jpeg|jpg)/)?.[1] || 'png') : 'svg';
+                const extMatch = node.src.match(/data:image\/(png|jpeg|jpg)/);
+                const ext = isBase64 ? (extMatch ? extMatch[1] : 'png') : 'svg';
                 const fileName = isBase64 ? `img_${resId}.${ext}` : `icon_${resId}.svg`;
                 
                 const res: ResourceInfo = {
@@ -148,10 +151,12 @@ export default class UIPackage {
         rules.forEach(rule => {
             const parts = rule.split(':');
             if (parts.length < 2) return;
-            const prop = parts[0].trim().toLowerCase(), val = parts[1].trim();
-            if (['width', 'height', 'left', 'top'].includes(prop)) styles[prop] = val.replace('px', '');
-            else if (['color', 'background'].includes(prop)) styles[prop] = val;
-            else if (prop === 'font-size') styles['fontSize'] = val.replace('px', '');
+            const key = parts[0].trim().toLowerCase();
+            const val = parts[1].trim();
+            styles[key] = val.replace('px', '');
+            // Also store camelCase for compatibility
+            const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+            if (camelKey !== key) styles[camelKey] = styles[key];
         });
         return styles;
     }

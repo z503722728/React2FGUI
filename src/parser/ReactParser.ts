@@ -60,14 +60,20 @@ export class ReactParser {
             // 4. Determine Object Type
             const type = this.determineObjectType(fullTagName, tagAttrs, content);
 
+            // Robust Coordinate parsing: check styles, then attributes
+            const getCoord = (key: string, def: string) => {
+                const val = styles[key] || styles[key.toLowerCase()] || "";
+                return val ? parseInt(val) : parseInt(def);
+            };
+
             const node: UINode = {
                 id: `n${this._nextId++}`,
                 name: fullTagName,
                 type: type,
-                x: parseInt(styles.left || "0"),
-                y: parseInt(styles.top || "0"),
-                width: parseInt(styles.width || "100"),
-                height: parseInt(styles.height || "30"),
+                x: getCoord('left', "0"),
+                y: getCoord('top', "0"),
+                width: getCoord('width', "100"),
+                height: getCoord('height', "30"),
                 styles: styles,
                 customProps: this.parseAttributes(tagAttrs),
                 children: [] 
@@ -137,13 +143,13 @@ export class ReactParser {
 
     private parseInlineStyle(styleStr: string): Record<string, string> {
         const styles: Record<string, string> = {};
-        // Split by semicolon but ignore inside brackets if any (though rare in basic inline styles)
+        // Use a more robust split that handles spaces after colons
         styleStr.split(';').forEach(rule => {
             const parts = rule.split(':');
             if (parts.length < 2) return;
             const key = parts[0].trim().toLowerCase();
             const val = parts[1].trim().replace(/['"]/g, '');
-            // Convert camelCase to kebab-case if needed
+            // Convert camelCase to kebab-case if needed (e.g. fontSize -> font-size)
             const kebabKey = key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
             styles[kebabKey] = val.replace('px', '');
             if (kebabKey !== key) styles[key] = val.replace('px', '');
