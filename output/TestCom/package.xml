@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<packageDescription id="r2f5mrmx">
+  <resources>
+    <component id="main_id" name="main.xml" path="/" exported="true"/>
+    <image id="res0" name="img_res0.png" path="/img/" exported="true"/>
+    <image id="res1" name="img_res1.png" path="/img/" exported="true"/>
+    <image id="res2" name="img_res2.png" path="/img/" exported="true"/>
+    <image id="res3" name="img_res3.svg" path="/img/" exported="true"/>
+    <image id="res4" name="img_res4.svg" path="/img/" exported="true"/>
+    <component id="comp_StyledTomato_n2_0" name="StyledTomato_n2.xml" path="/" exported="true"/>
+    <component id="comp_StyledGinger_n8_1" name="StyledGinger_n8.xml" path="/" exported="true"/>
+    <component id="comp_StyledOnion_n14_2" name="StyledOnion_n14.xml" path="/" exported="true"/>
+    <component id="comp_Icon_03_n32_3" name="Icon_03_n32.xml" path="/" exported="true"/>
+    <component id="comp_StyledButton_n30_4" name="StyledButton_n30.xml" path="/" exported="true"/>
+    <component id="comp_StyledSummary_n20_5" name="StyledSummary_n20.xml" path="/" exported="true"/>
+    <component id="comp_StyledPageheading_n34_6" name="StyledPageheading_n34.xml" path="/" exported="true"/>
+    <component id="comp_Cartbutton_n44_7" name="Cartbutton_n44.xml" path="/" exported="true"/>
+    <component id="comp_StyledNavigation_n38_8" name="StyledNavigation_n38.xml" path="/" exported="true"/>
+  </resources>
+  <publish name="TestCom">
+    <atlas name="Default" index="0"/>
+  </publish>
+</packageDescription>

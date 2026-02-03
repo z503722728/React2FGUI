@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<component size="128,40">
-  <displayList>
-    <text id="n14" name="0.5lb_n14" xy="16,9" size="100,30" fontSize="16" color="black" text="0.5 lb"/>
-    <image id="n15" name="Icon_n15" xy="88,4" size="100,30" src="res0"/>
-  </displayList>
-</component>

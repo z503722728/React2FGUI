@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<component size="1440,149">
+  <displayList>
+    <graph id="n35" name="Styled3itemsspan_n35" xy="0,0" size="100,30"/>
+    <graph id="n36" name="StyledBasketspan_n36" xy="0,0" size="100,30"/>
+    <graph id="n37" name="div_n37" xy="0,0" size="100,30" type="rect" fillColor="#cccccc"/>
+  </displayList>
+</component>

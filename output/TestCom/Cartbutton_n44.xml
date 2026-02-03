@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<component size="100,30">
+  <displayList>
+    <image id="n45" name="img_n45" xy="0,0" size="100,30" src="res4"/>
+  </displayList>
+</component>

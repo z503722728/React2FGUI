@@ -208,9 +208,22 @@ class ReactParser {
             if (svgMatch)
                 node.src = svgMatch[0];
         }
+        // Extract src: Base64 OR Placeholder OR Generic file path
+        // 1. Try Base64/Data URI
         const base64Match = attrs.match(/src=["']?(data:image\/[^;]+;base64,[^"'}]+)["']?/);
-        if (base64Match)
+        if (base64Match) {
             node.src = base64Match[1];
+        }
+        else {
+            // 2. Try Placeholder or Generic Path
+            const srcMatch = attrs.match(/src=["']?([^"'\s}]+)["']?/);
+            if (srcMatch) {
+                const val = srcMatch[1];
+                if (val.startsWith('__IMG_') || val.startsWith('http') || val.endsWith('.png') || val.endsWith('.jpg') || val.endsWith('.svg')) {
+                    node.src = val;
+                }
+            }
+        }
         return node;
     }
     shouldSkipTag(name) {
@@ -225,19 +238,23 @@ class ReactParser {
             return FGUIEnum_1.ObjectType.Button;
         if (lowerName.includes('input'))
             return FGUIEnum_1.ObjectType.InputText;
-        if (attrs.includes('data-svg-wrapper') || attrs.includes('src=') || (name !== 'div' && content.includes('<svg')) || (name === 'div' && content.trim().startsWith('<svg'))) {
-            return FGUIEnum_1.ObjectType.Image;
-        }
-        const cleanText = content.replace(/<[^>]+>/g, '').trim();
-        if ((lowerName.includes('text') || lowerName.includes('label') || attrs.includes('text=') || cleanText.length > 0)
-            && !content.includes('<div') && !content.includes('<img')) {
-            return FGUIEnum_1.ObjectType.Text;
-        }
         if (name.startsWith('Styled') || name === 'div') {
-            if (content.trim() === "") {
+            // Check if it's effectively empty or just text
+            // But if it's a structural div/styled component, we usually want it as a Component if it has children tags
+            if (content.trim() === "" && !attrs.includes('data-layer')) {
                 return FGUIEnum_1.ObjectType.Graph;
             }
             return FGUIEnum_1.ObjectType.Component;
+        }
+        if (attrs.includes('data-svg-wrapper') || attrs.includes('src=') || (name !== 'div' && content.includes('<svg')) || (name === 'div' && content.trim().startsWith('<svg')) || content.includes('__IMG_') || attrs.includes('__IMG_')) {
+            return FGUIEnum_1.ObjectType.Image;
+        }
+        const cleanText = content.replace(/<[^>]+>/g, '').trim();
+        // Fix: Don't assume it's text if it has *any* children tags, not just div/img
+        // We detect if there's an opening tag <Something
+        const hasChildrenTags = /<\w+/.test(content);
+        if ((lowerName.includes('text') || lowerName.includes('label') || attrs.includes('text=') || (cleanText.length > 0 && !hasChildrenTags))) {
+            return FGUIEnum_1.ObjectType.Text;
         }
         return FGUIEnum_1.ObjectType.Graph;
     }

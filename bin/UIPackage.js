@@ -46,6 +46,7 @@ class UIPackage {
         this._parser = new ReactParser_1.ReactParser();
         this._generator = new XMLGenerator_1.XMLGenerator();
         this._extractor = new SubComponentExtractor_1.SubComponentExtractor();
+        this._imagePlaceholderMap = new Map();
         this._cfg = cfg;
         this._buildId = 'r2f' + Math.random().toString(36).substring(2, 7);
     }
@@ -54,10 +55,17 @@ class UIPackage {
     }
     async exportPackage() {
         console.log(`🚀 Transforming React into FGUI (Architecture V2 - Recursive): ${this._cfg.packName}`);
-        const code = await fs.readFile(this._cfg.reactFile, 'utf-8');
+        let code = await fs.readFile(this._cfg.reactFile, 'utf-8');
         // 1. Extract Styles
-        const styleMap = this.extractStyles(code);
-        // 2. Parse Source into Hierarchical Tree
+        const { styles: styleMap, duplicates } = this.extractStyles(code);
+        // 1.5 Generate Merged Code for Verification
+        code = this.generateMergedCode(code, duplicates);
+        const mergedPath = this._cfg.reactFile.replace('.tsx', '_merged.tsx');
+        await fs.writeFile(mergedPath, code);
+        console.log(`📝 Generated Merged Source: ${mergedPath}`);
+        // 2. Pre-process Images (Dedupe & Placeholder)
+        code = this.extractImages(code);
+        // 3. Parse Source into Hierarchical Tree
         const rootNodes = this._parser.parse(code, styleMap);
         // 3. Process Resources (Images) on the full tree
         this.processResourcesRecursive(rootNodes);
@@ -107,28 +115,137 @@ class UIPackage {
         console.log(`📂 Output: ${packagePath}`);
     }
     extractStyles(code) {
-        const styleMap = {};
-        const styledRegex = /const\s+(Styled\w+)\s+=\s+styled\.(\w+)`([\s\S]*?)`/g;
+        const rawStyleMap = {};
+        // 1. Extract raw styles
+        // 1. Extract raw styles
+        // Allow whitespace before backtick
+        const styledRegex = /const\s+(Styled\w+)\s+=\s+styled\.(\w+)\s*`([\s\S]*?)`/g;
         let sMatch;
+        console.log(`[ExtractStyles] First 200 chars: ${code.substring(0, 200)}`);
         while ((sMatch = styledRegex.exec(code)) !== null) {
-            styleMap[sMatch[1]] = this.parseCss(sMatch[3]);
+            const name = sMatch[1];
+            const tag = sMatch[2];
+            console.log(`[ExtractStyles] Found style: ${name} (tag: ${tag})`);
+            const styleObj = this.parseCss(sMatch[3]);
+            rawStyleMap[name] = styleObj;
+            // Fuzzy Alias Logic:
+            // If defined as `StyledNameSpan` (because styled.span), create `StyledName` as matching alias to handle usage mismatches
+            if (name.toLowerCase().endsWith(tag.toLowerCase())) {
+                const shortName = name.substring(0, name.length - tag.length);
+                if (shortName.length > 0 && shortName !== 'Styled') {
+                    // Only register if not already explicitly defined (though unlikely to conflict in this codebase style)
+                    if (!rawStyleMap[shortName]) {
+                        console.log(`[ExtractStyles] Creating Fuzzy Alias: ${shortName} -> ${name}`);
+                        rawStyleMap[shortName] = styleObj;
+                    }
+                }
+            }
         }
-        return styleMap;
+        // 2. Deduplicate Styles
+        // Map<Hash, CanonicalName>
+        const styleHashMap = new Map();
+        const finalStyleMap = {};
+        const duplicatesMap = {}; // Original -> Canonical
+        let totalStyles = 0;
+        let uniqueStyles = 0;
+        for (const [name, styleObj] of Object.entries(rawStyleMap)) {
+            totalStyles++;
+            // Create a deterministic hash string from the style object
+            // We sort keys to ensure property order doesn't affect equality
+            const sortedKeys = Object.keys(styleObj).sort();
+            const styleString = sortedKeys.map(k => `${k}:${styleObj[k]}`).join(';');
+            if (styleHashMap.has(styleString)) {
+                // Duplicate found!
+                const canonicalName = styleHashMap.get(styleString);
+                duplicatesMap[name] = canonicalName;
+                // We map the duplicate name to the SAME style object reference
+                finalStyleMap[name] = finalStyleMap[canonicalName];
+                console.log(`[StyleDedupe] Merging ${name} -> ${canonicalName}`);
+            }
+            else {
+                // New unique style
+                styleHashMap.set(styleString, name);
+                finalStyleMap[name] = styleObj;
+                uniqueStyles++;
+            }
+        }
+        console.log(`[StyleDedupe] Processed ${totalStyles} styled components. Found ${uniqueStyles} unique styles. Merged ${totalStyles - uniqueStyles} duplicates.`);
+        return { styles: finalStyleMap, duplicates: duplicatesMap };
+    }
+    extractImages(code) {
+        let processedCode = code;
+        let imgCount = 0;
+        // 1. Extract Base64 Images (src="data:image...")
+        const base64Regex = /src\s*=\s*['"](data:image\/[^'"]+)['"]/g;
+        processedCode = processedCode.replace(base64Regex, (match, dataC) => {
+            const hash = this.hashContent(dataC);
+            const placeholder = `__IMG_${hash}`;
+            if (!this._imagePlaceholderMap.has(placeholder)) {
+                this._imagePlaceholderMap.set(placeholder, dataC);
+                imgCount++;
+            }
+            return `src="${placeholder}"`;
+        });
+        // 2. Extract Inline SVGs (<svg...>...</svg>)
+        // We capture the whole svg block
+        const svgRegex = /(<svg[\s\S]*?<\/svg>)/g;
+        processedCode = processedCode.replace(svgRegex, (match, svgContent) => {
+            // Normalize whitespace for consistent hashing
+            const normalizedSvg = svgContent.replace(/\s+/g, ' ').trim();
+            const hash = this.hashContent(normalizedSvg);
+            const placeholder = `__IMG_${hash}`;
+            if (!this._imagePlaceholderMap.has(placeholder)) {
+                // We keep the original content for later
+                this._imagePlaceholderMap.set(placeholder, svgContent);
+                imgCount++;
+            }
+            // We replace with a simple img tag so the parser sees it as a leaf node with src
+            // But ReactParser treats tags, so we use a self-closing placeholder tag
+            // Actually, best to act like an <img src="...">
+            return `<img src="${placeholder}" />`;
+        });
+        console.log(`[ImageDedupe] Pre-processed ${imgCount} unique images/SVGs into placeholders.`);
+        return processedCode;
+    }
+    hashContent(content) {
+        let hash = 0;
+        if (content.length === 0)
+            return '0';
+        for (let i = 0; i < content.length; i++) {
+            const char = content.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0; // Convert to 32bit integer
+        }
+        // Force positive and hex
+        return (hash >>> 0).toString(16);
     }
     processResourcesRecursive(nodes) {
-        const uniqueSrcMap = new Map();
+        // Map<Hash, ResourceID> to track unique images we've already assigned an ID
+        // The Placeholder ID itself is a Hash, so we can just use the Placeholder as the key?
+        // Actually, let's use the Placeholder as the Key for simplicity since it's 1:1 with content hash.
+        const uniquePlaceholderMap = new Map();
         const visit = (node) => {
-            if (node.src && node.type !== FGUIEnum_1.ObjectType.Button && node.type !== FGUIEnum_1.ObjectType.Component) {
-                // Handle Images / Loaders
-                if (uniqueSrcMap.has(node.src)) {
-                    node.src = uniqueSrcMap.get(node.src);
+            if (!node.src) {
+                if (node.children)
+                    node.children.forEach(visit);
+                return;
+            }
+            // Check if it's a placeholder
+            if (node.src.startsWith('__IMG_')) {
+                const placeholder = node.src;
+                if (uniquePlaceholderMap.has(placeholder)) {
+                    // Reuse existing Resource ID
+                    node.src = uniquePlaceholderMap.get(placeholder);
                 }
-                else {
+                else if (this._imagePlaceholderMap.has(placeholder)) {
+                    // New Resource
+                    const rawContent = this._imagePlaceholderMap.get(placeholder);
                     const resId = this.getNextResId();
-                    const isBase64 = node.src.startsWith('data:image');
+                    const isBase64 = rawContent.startsWith('data:image');
+                    const isSvgStart = rawContent.trim().startsWith('<svg');
                     let ext = 'svg';
                     if (isBase64) {
-                        const mimeMatch = node.src.match(/data:image\/([a-zA-Z0-9+.-]+);/);
+                        const mimeMatch = rawContent.match(/data:image\/([a-zA-Z0-9+.-]+);/);
                         if (mimeMatch) {
                             const mime = mimeMatch[1];
                             if (mime === 'svg+xml')
@@ -142,28 +259,55 @@ class UIPackage {
                             ext = 'png';
                         }
                     }
-                    else if (node.src.endsWith('.png'))
-                        ext = 'png';
-                    else if (node.src.endsWith('.jpg'))
-                        ext = 'jpg';
-                    const fileName = isBase64 ? `img_${resId}.${ext}` : `icon_${resId}.${ext}`;
+                    const fileName = (isBase64 || isSvgStart) ? `img_${resId}.${ext}` : `icon_${resId}.${ext}`;
                     const res = {
                         id: resId,
                         name: fileName,
                         type: 'image',
-                        data: node.src,
+                        data: rawContent,
                         isBase64: isBase64
                     };
                     this._resources.push(res);
-                    uniqueSrcMap.set(node.src, resId);
-                    node.src = resId;
+                    uniquePlaceholderMap.set(placeholder, resId);
+                    node.src = resId; // Assign final FGUI Res ID (e.g. "ui://Package/img_0" or just "img_0"?? usually just ID for internal links)
+                }
+                else {
+                    console.warn(`[RefRes] Warning: Image Reference ${placeholder} found but content missing in registry.`);
                 }
             }
+            else if (node.type !== FGUIEnum_1.ObjectType.Button && node.type !== FGUIEnum_1.ObjectType.Component) {
+                // Legacy / Standard path handling (if not pre-processed)
+                console.log(`[RefRes] Processing standard path: ${node.src}`);
+            }
             if (node.children) {
-                node.children.forEach(child => visit(child));
+                node.children.forEach(visit);
             }
         };
-        nodes.forEach(root => visit(root));
+        nodes.forEach(visit);
+    }
+    generateMergedCode(code, duplicatesMap) {
+        let mergedCode = code;
+        for (const [duplicate, canonical] of Object.entries(duplicatesMap)) {
+            // 1. Remove Definition
+            // const Duplicate = styled.div`...`; 
+            // We use a regex that matches the definition block
+            const defRegex = new RegExp(`const\\s+${duplicate}\\s+=\\s+styled\\.(\\w+)\\s*\`[\\s\\S]*?\`;`, 'g');
+            mergedCode = mergedCode.replace(defRegex, `// Merged ${duplicate} -> ${canonical}`);
+            // 2. Replace Usages in JSX
+            const namesToReplace = [duplicate];
+            if (duplicate.endsWith('span')) {
+                namesToReplace.push(duplicate.replace(/span$/, ''));
+            }
+            for (const name of namesToReplace) {
+                // Open tag
+                const openTagRegex = new RegExp(`<${name}(\\s|>)`, 'g');
+                mergedCode = mergedCode.replace(openTagRegex, `<${canonical}$1`);
+                // Close tag
+                const closeTagRegex = new RegExp(`</${name}>`, 'g');
+                mergedCode = mergedCode.replace(closeTagRegex, `</${canonical}>`);
+            }
+        }
+        return mergedCode;
     }
     parseCss(css) {
         const styles = {};
