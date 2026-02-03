@@ -139,9 +139,11 @@ export class ReactParser {
                 currentY += parent.y;
             }
 
+            const id = `n${this._nextId++}`;
             const node: UINode = {
-                id: `n${this._nextId++}`,
-                name: fullTagName,
+                id: id,
+                // Append ID to name to ensure uniqueness in FGUI display list
+                name: `${fullTagName}_${id}`,
                 type: type,
                 x: currentX,
                 y: currentY,
