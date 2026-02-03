@@ -1,15 +1,16 @@
 <?xml version="1.0"?>
 <component size="395,318">
   <displayList>
-    <graph id="n21" name="StyledHeirloomtomatospan_n21" xy="0,0" size="100,30"/>
-    <graph id="n22" name="StyledSubtotalspan_n22" xy="0,0" size="100,30"/>
-    <graph id="n23" name="StyledSubtotalspan_n23" xy="0,0" size="100,30"/>
-    <graph id="n24" name="StyledSubtotalspan_n24" xy="0,0" size="100,30"/>
-    <graph id="n25" name="StyledSubtotalspan_n25" xy="0,0" size="100,30"/>
-    <graph id="n26" name="StyledSubtotalspan_n26" xy="0,0" size="100,30"/>
-    <graph id="n27" name="StyledSubtotalspan_n27" xy="0,0" size="100,30"/>
-    <graph id="n28" name="Styled1lbspan_n28" xy="0,0" size="100,30"/>
-    <graph id="n29" name="Styled1lbspan_n29" xy="0,0" size="100,30"/>
-    <component id="n30" name="StyledButton_n30" xy="24,246" size="347,48" src="comp_StyledButton_n30_4"/>
+    <graph id="n0" name="n0" xy="0,0" size="395,318" type="rect" fillColor="#fafaf5"/>
+    <text id="n21" name="StyledHeirloomtomatospan_n21" xy="0,0" size="100,30" fontSize="20" color="#000000" text="Order summary"/>
+    <text id="n22" name="StyledSubtotalspan_n22" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Subtotal"/>
+    <text id="n23" name="StyledSubtotalspan_n23" xy="0,0" size="100,30" fontSize="16" color="#000000" text="$27.44"/>
+    <text id="n24" name="StyledSubtotalspan_n24" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Shipping"/>
+    <text id="n25" name="StyledSubtotalspan_n25" xy="0,0" size="100,30" fontSize="16" color="#000000" text="$3.99"/>
+    <text id="n26" name="StyledSubtotalspan_n26" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Tax"/>
+    <text id="n27" name="StyledSubtotalspan_n27" xy="0,0" size="100,30" fontSize="16" color="#000000" text="$2.00"/>
+    <text id="n28" name="Styled1lbspan_n28" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Total"/>
+    <text id="n29" name="Styled1lbspan_n29" xy="0,0" size="100,30" fontSize="16" color="#000000" text="$33.43"/>
+    <component id="n30" name="StyledButton_n30" xy="24,246" size="347,48" src="comp_StyledButton_n30_4" fileName="StyledButton_n30.xml"/>
   </displayList>
 </component>

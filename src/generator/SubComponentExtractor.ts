@@ -57,6 +57,7 @@ export class SubComponentExtractor {
                         customProps: child.customProps,
                         children: [],
                         src: compRes.id,
+                        fileName: compRes.name + '.xml',
                         asComponent: true
                     };
 

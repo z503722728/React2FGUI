@@ -21,6 +21,7 @@ export interface UINode {
     // Content (text or image/svg data)
     text?: string;
     src?: string;
+    fileName?: string;
     
     // Hierarchy
     children: UINode[];

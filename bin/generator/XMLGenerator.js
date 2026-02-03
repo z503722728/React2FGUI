@@ -48,9 +48,26 @@ class XMLGenerator {
      * Generates component XML from a list of UI nodes.
      * Recursively processes children if present in the 'nodes' tree.
      */
-    generateComponentXml(nodes, buildId, width = 1440, height = 1024) {
+    generateComponentXml(nodes, buildId, width = 1440, height = 1024, rootStyles) {
         const component = xmlbuilder.create('component').att('size', `${width},${height}`);
         const displayList = component.ele('displayList');
+        // Automatic Background Injection
+        // If the component root has background-color or border, we need a graph to render it
+        if (rootStyles) {
+            const mapper = new PropertyMapper_1.PropertyMapper(); // Using local instance just for easy mapping, or we can manually map
+            // Use a temporary node to map attributes
+            const tempNode = { id: 'n0', name: 'n0', styles: rootStyles, type: FGUIEnum_1.ObjectType.Graph, width, height, x: 0, y: 0 };
+            const attrs = mapper.mapAttributes(tempNode);
+            // Check if we have visual properties
+            if (attrs.fillColor || (attrs.strokeColor && attrs.strokeSize)) {
+                // Yes, generate a background shape
+                // Ensure it fills the component
+                attrs.size = `${width},${height}`;
+                attrs.xy = "0,0";
+                // Add to display list FIRST (bottom layer)
+                displayList.ele('graph', attrs);
+            }
+        }
         nodes.forEach(node => {
             this.generateNodeXml(node, displayList, buildId);
         });
@@ -63,9 +80,12 @@ class XMLGenerator {
         const attributes = this._mapper.mapAttributes(node);
         let eleName = 'graph';
         // Check if this node is a placeholder for an extracted component
+        // Check if this node is a placeholder for an extracted component
         if (node.asComponent && node.src) {
             eleName = 'component';
             attributes.src = node.src;
+            if (node.fileName)
+                attributes.fileName = node.fileName;
             // Clear other unrelated attributes that might confuse FGUI or valid XML
             delete attributes.type;
             delete attributes.fillColor;
@@ -80,6 +100,8 @@ class XMLGenerator {
                     eleName = 'image';
                     if (node.src) {
                         attributes.src = node.src;
+                        if (node.fileName)
+                            attributes.fileName = node.fileName;
                         delete attributes.fill;
                     }
                     break;

@@ -238,10 +238,17 @@ class ReactParser {
             return FGUIEnum_1.ObjectType.Button;
         if (lowerName.includes('input'))
             return FGUIEnum_1.ObjectType.InputText;
-        if (name.startsWith('Styled') || name === 'div') {
+        if (name.startsWith('Styled') || name === 'div' || name === 'span' || name.match(/^h[1-6]$/) || name === 'p') {
+            // Check if it should be Text
+            // If it has no child tags (simple text)
+            const hasTags = /<[a-z][\s\S]*>/i.test(content);
+            if (!hasTags && content.trim().length > 0) {
+                return FGUIEnum_1.ObjectType.Text;
+            }
             // Check if it's effectively empty or just text
             // But if it's a structural div/styled component, we usually want it as a Component if it has children tags
             if (content.trim() === "" && !attrs.includes('data-layer')) {
+                // Empty div with no data-layer -> likely just a spacer or invisible
                 return FGUIEnum_1.ObjectType.Graph;
             }
             return FGUIEnum_1.ObjectType.Component;

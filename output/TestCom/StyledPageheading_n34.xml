@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <component size="1440,149">
   <displayList>
-    <graph id="n35" name="Styled3itemsspan_n35" xy="0,0" size="100,30"/>
-    <graph id="n36" name="StyledBasketspan_n36" xy="0,0" size="100,30"/>
+    <graph id="n0" name="n0" xy="0,0" size="1440,149" type="rect" fillColor="#FFFFFF"/>
+    <text id="n35" name="Styled3itemsspan_n35" xy="0,0" size="100,30" fontSize="20" color="#000000" text="3 items"/>
+    <text id="n36" name="StyledBasketspan_n36" xy="0,0" size="100,30" fontSize="64" color="#000000" text="Basket"/>
     <graph id="n37" name="div_n37" xy="0,0" size="100,30" type="rect" fillColor="#cccccc"/>
   </displayList>
 </component>

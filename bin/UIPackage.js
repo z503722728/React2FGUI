@@ -98,7 +98,7 @@ class UIPackage {
                 // res.data contains the JSON string of the UINode tree for this component
                 const compNode = JSON.parse(res.data);
                 // We use the generator to build the XML for this sub-component
-                const xmlContent = this._generator.generateComponentXml(compNode.children, this._buildId, compNode.width, compNode.height);
+                const xmlContent = this._generator.generateComponentXml(compNode.children, this._buildId, compNode.width, compNode.height, compNode.styles);
                 const fileName = res.name.endsWith('.xml') ? res.name : res.name + '.xml';
                 await fs.writeFile(path.join(packagePath, fileName), xmlContent);
             }
@@ -107,7 +107,8 @@ class UIPackage {
         // Use the first root node's size for the main component if available, otherwise default
         const mainWidth = rootNodes.length > 0 ? rootNodes[0].width : 1440;
         const mainHeight = rootNodes.length > 0 ? rootNodes[0].height : 1024;
-        const mainXml = this._generator.generateComponentXml(rootNodes, this._buildId, mainWidth, mainHeight);
+        const mainStyles = rootNodes.length > 0 ? rootNodes[0].styles : undefined;
+        const mainXml = this._generator.generateComponentXml(rootNodes, this._buildId, mainWidth, mainHeight, mainStyles);
         const packageXml = this._generator.generatePackageXml(this._resources, this._buildId, this._cfg.packName);
         await fs.writeFile(path.join(packagePath, 'package.xml'), packageXml);
         await fs.writeFile(path.join(packagePath, 'main.xml'), mainXml);
@@ -223,6 +224,7 @@ class UIPackage {
         // Map<Hash, ResourceID> to track unique images we've already assigned an ID
         // The Placeholder ID itself is a Hash, so we can just use the Placeholder as the key?
         // Actually, let's use the Placeholder as the Key for simplicity since it's 1:1 with content hash.
+        // Map<Hash, {id: string, fileName: string}>
         const uniquePlaceholderMap = new Map();
         const visit = (node) => {
             if (!node.src) {
@@ -235,7 +237,9 @@ class UIPackage {
                 const placeholder = node.src;
                 if (uniquePlaceholderMap.has(placeholder)) {
                     // Reuse existing Resource ID
-                    node.src = uniquePlaceholderMap.get(placeholder);
+                    const info = uniquePlaceholderMap.get(placeholder);
+                    node.src = info.id;
+                    node.fileName = info.fileName;
                 }
                 else if (this._imagePlaceholderMap.has(placeholder)) {
                     // New Resource
@@ -268,8 +272,9 @@ class UIPackage {
                         isBase64: isBase64
                     };
                     this._resources.push(res);
-                    uniquePlaceholderMap.set(placeholder, resId);
-                    node.src = resId; // Assign final FGUI Res ID (e.g. "ui://Package/img_0" or just "img_0"?? usually just ID for internal links)
+                    uniquePlaceholderMap.set(placeholder, { id: resId, fileName: 'img/' + fileName });
+                    node.src = resId;
+                    node.fileName = 'img/' + fileName;
                 }
                 else {
                     console.warn(`[RefRes] Warning: Image Reference ${placeholder} found but content missing in registry.`);
