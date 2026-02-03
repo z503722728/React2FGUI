@@ -8,6 +8,7 @@ interface Resource {
     name: string;
     type: 'image' | 'component';
     data?: string;
+    isBase64?: boolean;
 }
 
 export default class UIPackage {
@@ -36,10 +37,18 @@ export default class UIPackage {
         await fs.ensureDir(packagePath);
         await fs.ensureDir(imgPath);
         
-        // 1. Write resources (SVGs)
+        // 1. Write resources (SVGs and decoded Base64 images)
         for (const res of this._resources) {
             if (res.data) {
-                await fs.writeFile(path.join(imgPath, res.name), res.data);
+                if (res.isBase64) {
+                    const base64Parts = res.data.split(',');
+                    const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
+                    if (base64Data) {
+                        await fs.writeFile(path.join(imgPath, res.name), Buffer.from(base64Data, 'base64'));
+                    }
+                } else {
+                    await fs.writeFile(path.join(imgPath, res.name), res.data);
+                }
             }
         }
 
@@ -67,32 +76,70 @@ export default class UIPackage {
         const styleMap: { [key: string]: any } = {};
         
         // 1. Extract Styled Components styles
-        const styledRegex = /const\s+Styled(\w+)\s+=\s+styled\.(\w+)`([\s\S]*?)`/g;
+        const styledRegex = /const\s+(Styled\w+)\s+=\s+styled\.(\w+)`([\s\S]*?)`/g;
         let sMatch;
         while ((sMatch = styledRegex.exec(code)) !== null) {
             styleMap[sMatch[1]] = this.parseCss(sMatch[3]);
         }
 
         // 2. Scan for Styled Tags
-        const jsxTagRegex = /<Styled(\w+)/g;
+        const jsxTagRegex = /<(Styled\w+)/g;
         let tagMatch;
         let nodeIndex = 1;
         while ((tagMatch = jsxTagRegex.exec(code)) !== null) {
-            const name = tagMatch[1];
-            if (name === 'Shoppingcart') continue; 
+            const tagName = tagMatch[1];
+            if (tagName === 'StyledShoppingcart') continue; 
 
-            const styles = styleMap[name] || {};
+            let styles = styleMap[tagName];
+            if (!styles) {
+                const possibleNames = [`${tagName}span`, `${tagName}div`, `${tagName}button`].map(n => n.toLowerCase());
+                const foundKey = Object.keys(styleMap).find(k => possibleNames.includes(k.toLowerCase()));
+                if (foundKey) styles = styleMap[foundKey];
+            }
+            styles = styles || {};
+
             const id = `n${nodeIndex++}`;
             const xy = `${styles.left || 0},${styles.top || 0}`;
             const size = `${styles.width || 100},${styles.height || 30}`;
 
             const startPos = tagMatch.index;
             const openTagEnd = code.indexOf('>', startPos);
-            const closeTag = `</Styled${name}>`;
-            const endPos = code.indexOf(closeTag, openTagEnd);
+            const tagFullHeader = code.substring(startPos, openTagEnd + 1);
             
-            if (endPos === -1) continue;
-            const content = code.substring(openTagEnd + 1, endPos);
+            // Robust Base64 Extraction from src attribute
+            const base64SrcMatch = tagFullHeader.match(/src="data:image\/(png|jpeg|jpg);base64,([^"]+)"/);
+            if (base64SrcMatch) {
+                const ext = base64SrcMatch[1];
+                const base64Content = base64SrcMatch[2];
+                const resId = this.getNextResId();
+                const fileName = `img_${id}.${ext}`;
+                
+                this._resources.push({
+                    id: resId,
+                    name: fileName,
+                    type: 'image',
+                    data: `data:image/${ext};base64,${base64Content}`,
+                    isBase64: true
+                });
+
+                displayList.ele('loader', {
+                    id, name: tagName, xy, size,
+                    url: `ui://${this._buildId}${resId}`,
+                    fill: 'scaleFree'
+                });
+                continue;
+            }
+
+            // Handle content
+            const isSelfClosing = code[openTagEnd - 1] === '/';
+            let content = "";
+            if (!isSelfClosing) {
+                const closeTag = `</${tagName}>`;
+                const endPos = code.indexOf(closeTag, openTagEnd);
+                if (endPos !== -1) {
+                    content = code.substring(openTagEnd + 1, endPos);
+                }
+            }
 
             // --- SVG EXTRACTION ---
             const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
@@ -109,7 +156,7 @@ export default class UIPackage {
                 });
 
                 displayList.ele('loader', {
-                    id, name, xy, size,
+                    id, name: tagName, xy, size,
                     url: `ui://${this._buildId}${resId}`,
                     fill: 'scaleFree'
                 });
@@ -119,12 +166,12 @@ export default class UIPackage {
             // --- TEXT OR GRAPH ---
             const cleanText = content.replace(/<Styled\w+.*?>.*?<\/Styled\w+>/gs, '').replace(/<.*?>/gs, '').trim();
 
-            if (name.toLowerCase().includes('button')) {
-                displayList.ele('component', { id, name, xy, size, extention: 'Button' }).ele('Button', { title: cleanText });
+            if (tagName.toLowerCase().includes('button')) {
+                displayList.ele('component', { id, name: tagName, xy, size, extention: 'Button' }).ele('Button', { title: cleanText });
             } else if (cleanText.length > 0) {
-                displayList.ele('text', { id, name, xy, size, fontSize: styles.fontSize || '12', color: styles.color || '#000000', text: cleanText });
+                displayList.ele('text', { id, name: tagName, xy, size, fontSize: styles.fontSize || '12', color: styles.color || '#000000', text: cleanText });
             } else {
-                displayList.ele('graph', { id, name, xy, size, type: 'rect', fillColor: styles.background || '#cccccc' });
+                displayList.ele('graph', { id, name: tagName, xy, size, type: 'rect', fillColor: styles.background || '#cccccc' });
             }
         }
         return component.end({ pretty: true });
