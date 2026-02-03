@@ -10,16 +10,19 @@ export class PropertyMapper {
      * Maps a UINode's raw styles and props into FGUI XML attributes.
      */
     public mapAttributes(node: UINode): Record<string, string> {
+        // Log style keys for debugging if necessary
+        const s = node.styles;
+        
         const attr: Record<string, string> = {
             id: node.id,
             name: node.name,
-            xy: `${node.x},${node.y}`,
-            size: `${node.width},${node.height}`
+            xy: `${s.left || node.x},${s.top || node.y}`,
+            size: `${s.width || node.width},${s.height || node.height}`
         };
 
         // 1. Map Common Visual Properties
-        if (node.styles.opacity) {
-            attr.alpha = node.styles.opacity;
+        if (s.opacity) {
+            attr.alpha = s.opacity;
         }
 
         // 2. Type-specific Mapping
@@ -41,12 +44,13 @@ export class PropertyMapper {
     }
 
     private mapTextProperties(node: UINode, attr: Record<string, string>): void {
-        attr.fontSize = node.styles.fontSize || "12";
-        attr.color = this.formatColor(node.styles.color || "#000000");
+        const s = node.styles;
+        attr.fontSize = s['font-size'] || s.fontSize || "12";
+        attr.color = this.formatColor(s.color || "#000000");
         
         // Alignment mapping
-        if (node.styles.textAlign) {
-            attr.align = node.styles.textAlign as AlignType;
+        if (s['text-align'] || s.textAlign) {
+            attr.align = (s['text-align'] || s.textAlign) as AlignType;
         }
         
         if (node.text) {
@@ -55,17 +59,19 @@ export class PropertyMapper {
     }
 
     private mapLoaderProperties(node: UINode, attr: Record<string, string>): void {
+        const s = node.styles;
         // FGUI Loader specific
-        attr.fill = LoaderFillType.scaleFree.toString(); // Default to scaleFree for absolute layouts
+        attr.fill = LoaderFillType.scaleFree.toString(); 
         
-        const objectFit = node.styles.objectFit;
+        const objectFit = s['object-fit'] || s.objectFit;
         if (objectFit === 'contain') attr.fill = LoaderFillType.scale.toString();
         else if (objectFit === 'cover') attr.fill = LoaderFillType.scaleNoBorder.toString();
     }
 
     private mapGraphProperties(node: UINode, attr: Record<string, string>): void {
+        const s = node.styles;
         attr.type = "rect";
-        attr.fillColor = this.formatColor(node.styles.background || node.styles.backgroundColor || "#cccccc");
+        attr.fillColor = this.formatColor(s.background || s.backgroundColor || "#cccccc");
     }
 
     /**
@@ -73,7 +79,6 @@ export class PropertyMapper {
      */
     private formatColor(color: string): string {
         if (color.startsWith('rgba')) {
-            // Simple extraction for now, can be improved with full RGBA to Hex logic from lib.js
             const matches = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
             if (matches) {
                 const r = parseInt(matches[1]).toString(16).padStart(2, '0');

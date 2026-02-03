@@ -115,7 +115,12 @@ export class ReactParser {
         
         // Text: Has text content AND doesn't look like a container
         const cleanText = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/gs, '').trim();
-        if ((lowerName.includes('text') || lowerName.includes('span') || cleanText.length > 0) && !content.includes('<div') && !content.includes('<Styled')) {
+        // Improvement: if it's a Styled tag but only contains text (no children tags), it's definitely a Text node
+        if (name.startsWith('Styled') && cleanText.length > 0 && !content.includes('<Styled') && !content.includes('<div')) {
+            return ObjectType.Text;
+        }
+
+        if (lowerName.includes('text') || lowerName.includes('span')) {
             return ObjectType.Text;
         }
         
@@ -132,12 +137,16 @@ export class ReactParser {
 
     private parseInlineStyle(styleStr: string): Record<string, string> {
         const styles: Record<string, string> = {};
+        // Split by semicolon but ignore inside brackets if any (though rare in basic inline styles)
         styleStr.split(';').forEach(rule => {
             const parts = rule.split(':');
             if (parts.length < 2) return;
             const key = parts[0].trim().toLowerCase();
             const val = parts[1].trim().replace(/['"]/g, '');
-            styles[key] = val.replace('px', '');
+            // Convert camelCase to kebab-case if needed
+            const kebabKey = key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+            styles[kebabKey] = val.replace('px', '');
+            if (kebabKey !== key) styles[key] = val.replace('px', '');
         });
         return styles;
     }

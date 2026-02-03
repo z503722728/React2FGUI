@@ -54,10 +54,6 @@ export class XMLGenerator {
             }
 
             const element = displayList.ele(eleName, attributes);
-
-            // Special sub-elements for top-level MainUI Buttons
-            // (In FGUI, if a component is used as a Button inside another component, 
-            // the <Button> tag is optional here unless overriding props)
         });
 
         return component.end({ pretty: true });
