@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<component size="1440,112">
+  <displayList>
+    <graph id="n0" name="n0" xy="0,0" size="1440,112" type="rect" fillColor="#cccccc"/>
+    <text id="n38" name="StyledWorldPeas_n38" xy="0,0" size="100,30" fontSize="32" color="#426b1f" text="World Peas"/>
+    <text id="n39" name="StyledSubtotalspan_n39" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Shop"/>
+    <text id="n40" name="StyledSubtotalspan_n40" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Newstand"/>
+    <text id="n41" name="StyledSubtotalspan_n41" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Who we are"/>
+    <text id="n42" name="StyledSubtotalspan_n42" xy="0,0" size="100,30" fontSize="16" color="#000000" text="My profile"/>
+    <image id="n43" name="Cartbutton_n43" xy="1218,32" size="100,30" fill="4"/>
+  </displayList>
+</component>

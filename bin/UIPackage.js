@@ -119,7 +119,6 @@ class UIPackage {
         const rawStyleMap = {};
         // 1. Extract raw styles
         // 1. Extract raw styles
-        // Allow whitespace before backtick
         const styledRegex = /const\s+(Styled\w+)\s+=\s+styled\.(\w+)\s*`([\s\S]*?)`/g;
         let sMatch;
         console.log(`[ExtractStyles] First 200 chars: ${code.substring(0, 200)}`);
@@ -128,19 +127,8 @@ class UIPackage {
             const tag = sMatch[2];
             console.log(`[ExtractStyles] Found style: ${name} (tag: ${tag})`);
             const styleObj = this.parseCss(sMatch[3]);
+            styleObj['_tag'] = tag; // Store the tag for deduplication
             rawStyleMap[name] = styleObj;
-            // Fuzzy Alias Logic:
-            // If defined as `StyledNameSpan` (because styled.span), create `StyledName` as matching alias to handle usage mismatches
-            if (name.toLowerCase().endsWith(tag.toLowerCase())) {
-                const shortName = name.substring(0, name.length - tag.length);
-                if (shortName.length > 0 && shortName !== 'Styled') {
-                    // Only register if not already explicitly defined (though unlikely to conflict in this codebase style)
-                    if (!rawStyleMap[shortName]) {
-                        console.log(`[ExtractStyles] Creating Fuzzy Alias: ${shortName} -> ${name}`);
-                        rawStyleMap[shortName] = styleObj;
-                    }
-                }
-            }
         }
         // 2. Deduplicate Styles
         // Map<Hash, CanonicalName>
@@ -191,6 +179,11 @@ class UIPackage {
         // We capture the whole svg block
         const svgRegex = /(<svg[\s\S]*?<\/svg>)/g;
         processedCode = processedCode.replace(svgRegex, (match, svgContent) => {
+            // Capture dimensions if present
+            const widthMatch = svgContent.match(/width=["'](\d+)["']/);
+            const heightMatch = svgContent.match(/height=["'](\d+)["']/);
+            const w = widthMatch ? widthMatch[1] : "";
+            const h = heightMatch ? heightMatch[1] : "";
             // Normalize whitespace for consistent hashing
             const normalizedSvg = svgContent.replace(/\s+/g, ' ').trim();
             const hash = this.hashContent(normalizedSvg);
@@ -200,10 +193,14 @@ class UIPackage {
                 this._imagePlaceholderMap.set(placeholder, svgContent);
                 imgCount++;
             }
-            // We replace with a simple img tag so the parser sees it as a leaf node with src
-            // But ReactParser treats tags, so we use a self-closing placeholder tag
-            // Actually, best to act like an <img src="...">
-            return `<img src="${placeholder}" />`;
+            // Construct replacement img tag with dimensions if found
+            let replacement = `<img src="${placeholder}"`;
+            if (w)
+                replacement += ` width="${w}"`;
+            if (h)
+                replacement += ` height="${h}"`;
+            replacement += ` />`;
+            return replacement;
         });
         console.log(`[ImageDedupe] Pre-processed ${imgCount} unique images/SVGs into placeholders.`);
         return processedCode;
@@ -299,18 +296,13 @@ class UIPackage {
             const defRegex = new RegExp(`const\\s+${duplicate}\\s+=\\s+styled\\.(\\w+)\\s*\`[\\s\\S]*?\`;`, 'g');
             mergedCode = mergedCode.replace(defRegex, `// Merged ${duplicate} -> ${canonical}`);
             // 2. Replace Usages in JSX
-            const namesToReplace = [duplicate];
-            if (duplicate.endsWith('span')) {
-                namesToReplace.push(duplicate.replace(/span$/, ''));
-            }
-            for (const name of namesToReplace) {
-                // Open tag
-                const openTagRegex = new RegExp(`<${name}(\\s|>)`, 'g');
-                mergedCode = mergedCode.replace(openTagRegex, `<${canonical}$1`);
-                // Close tag
-                const closeTagRegex = new RegExp(`</${name}>`, 'g');
-                mergedCode = mergedCode.replace(closeTagRegex, `</${canonical}>`);
-            }
+            // Only replace the exact name to avoid accidentally matching parent components
+            // Open tag
+            const openTagRegex = new RegExp(`<${duplicate}(\\s|>)`, 'g');
+            mergedCode = mergedCode.replace(openTagRegex, `<${canonical}$1`);
+            // Close tag
+            const closeTagRegex = new RegExp(`</${duplicate}>`, 'g');
+            mergedCode = mergedCode.replace(closeTagRegex, `</${canonical}>`);
         }
         return mergedCode;
     }

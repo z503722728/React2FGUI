@@ -32,14 +32,22 @@ export class SubComponentExtractor {
                 this.processNodeRef(child);
             }
 
-            // 2. Evaluate if 'child' should be extracted
-            if (child.type === ObjectType.Component || child.type === ObjectType.Group || child.type === ObjectType.Button) {
-                const isComplex = child.children.length > 0;
+            // 2. Evaluate if 'child' should be extracted as a separate component
+            if (child.type === ObjectType.Component || child.type === ObjectType.Button) {
+                // Heuristic: A node is "Significant" enough to be its own component if:
+                // 1. It is a Button (functionally distinct)
+                // 2. It has more than 2 children (e.g., a card or complex group)
+                // 3. It contains children that were themselves already extracted (nested hierarchy)
+                
+                const hasNestedExtracted = child.children.some(c => c.asComponent);
+                const isSignificant = child.children.length > 2 || 
+                    child.type === ObjectType.Button || 
+                    hasNestedExtracted;
 
-                if (isComplex) {
+                if (isSignificant) {
                     // Extract!
                     const compRes = this.createSubComponentResource(child);
-                    // Only add if not already in the list (referential check not needed due to map, but array needs it)
+                    // Only add if not already in the list
                     if (!this._newResources.find(r => r.id === compRes.id)) {
                         this._newResources.push(compRes);
                     }

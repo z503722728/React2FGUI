@@ -11,6 +11,6 @@
     <text id="n27" name="StyledSubtotalspan_n27" xy="0,0" size="100,30" fontSize="16" color="#000000" text="$2.00"/>
     <text id="n28" name="Styled1lbspan_n28" xy="0,0" size="100,30" fontSize="16" color="#000000" text="Total"/>
     <text id="n29" name="Styled1lbspan_n29" xy="0,0" size="100,30" fontSize="16" color="#000000" text="$33.43"/>
-    <component id="n30" name="StyledButton_n30" xy="24,246" size="347,48" src="comp_StyledButton_n30_4" fileName="StyledButton_n30.xml"/>
+    <component id="n30" name="StyledButton_n30" xy="24,246" size="347,48" src="comp_StyledButton_n30_3" fileName="StyledButton_n30.xml"/>
   </displayList>
 </component>

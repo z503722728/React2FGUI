@@ -108,7 +108,6 @@ export default class UIPackage {
         const rawStyleMap: Record<string, any> = {};
         // 1. Extract raw styles
         // 1. Extract raw styles
-        // Allow whitespace before backtick
         const styledRegex = /const\s+(Styled\w+)\s+=\s+styled\.(\w+)\s*`([\s\S]*?)`/g;
         let sMatch;
         console.log(`[ExtractStyles] First 200 chars: ${code.substring(0, 200)}`);
@@ -118,20 +117,8 @@ export default class UIPackage {
             console.log(`[ExtractStyles] Found style: ${name} (tag: ${tag})`);
             
             const styleObj = this.parseCss(sMatch[3]);
+            styleObj['_tag'] = tag; // Store the tag for deduplication
             rawStyleMap[name] = styleObj;
-
-            // Fuzzy Alias Logic:
-            // If defined as `StyledNameSpan` (because styled.span), create `StyledName` as matching alias to handle usage mismatches
-            if (name.toLowerCase().endsWith(tag.toLowerCase())) {
-                const shortName = name.substring(0, name.length - tag.length);
-                if (shortName.length > 0 && shortName !== 'Styled') {
-                    // Only register if not already explicitly defined (though unlikely to conflict in this codebase style)
-                    if (!rawStyleMap[shortName]) {
-                        console.log(`[ExtractStyles] Creating Fuzzy Alias: ${shortName} -> ${name}`);
-                        rawStyleMap[shortName] = styleObj;
-                    }
-                }
-            }
         }
 
         // 2. Deduplicate Styles
@@ -317,20 +304,14 @@ export default class UIPackage {
             mergedCode = mergedCode.replace(defRegex, `// Merged ${duplicate} -> ${canonical}`);
 
             // 2. Replace Usages in JSX
-            const namesToReplace = [duplicate];
-            if (duplicate.endsWith('span')) {
-                namesToReplace.push(duplicate.replace(/span$/, ''));
-            }
-
-            for (const name of namesToReplace) {
-                // Open tag
-                const openTagRegex = new RegExp(`<${name}(\\s|>)`, 'g');
-                mergedCode = mergedCode.replace(openTagRegex, `<${canonical}$1`);
-                
-                // Close tag
-                const closeTagRegex = new RegExp(`</${name}>`, 'g');
-                mergedCode = mergedCode.replace(closeTagRegex, `</${canonical}>`);
-            }
+            // Only replace the exact name to avoid accidentally matching parent components
+            // Open tag
+            const openTagRegex = new RegExp(`<${duplicate}(\\s|>)`, 'g');
+            mergedCode = mergedCode.replace(openTagRegex, `<${canonical}$1`);
+            
+            // Close tag
+            const closeTagRegex = new RegExp(`</${duplicate}>`, 'g');
+            mergedCode = mergedCode.replace(closeTagRegex, `</${canonical}>`);
         }
 
         return mergedCode;

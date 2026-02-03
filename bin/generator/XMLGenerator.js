@@ -124,24 +124,25 @@ class XMLGenerator {
                 case FGUIEnum_1.ObjectType.Component:
                 case FGUIEnum_1.ObjectType.Graph:
                 case FGUIEnum_1.ObjectType.Group:
-                    eleName = 'graph';
-                    // If it's a container that wasn't extracted (maybe empty or ignored), render as graph placeholder
-                    // or group (if we implement groups).
+                    // If it's a container that wasn't extracted, we flatten its children.
+                    // But first, if the container itself has visual styles, we must render a background graph.
+                    if (attributes.fillColor || (attributes.strokeColor && attributes.strokeSize)) {
+                        parentEle.ele('graph', attributes);
+                    }
                     if (node.children && node.children.length > 0) {
-                        // FGUI is flat list per component.
-                        // If we did NOT extract this component, we must flatten its children into the current display list.
-                        // The Parser gives us children with coordinates relative to THIS node.
-                        // So we need to offset them by THIS node's x/y before adding to displayList.
-                        // Recursive Flattening for non-extracted containers
+                        // FGUI is a flat list per component.
+                        // Recursive Flattening for non-extracted containers:
+                        // We promote children to the current level, adjusting coordinates.
                         node.children.forEach(child => {
-                            // Clone child to avoid mutating original tree potentially
                             const flattenedChild = { ...child };
+                            // Note: x/y in UINode are already parsed from 'left'/'top'
                             flattenedChild.x = node.x + child.x;
                             flattenedChild.y = node.y + child.y;
                             this.generateNodeXml(flattenedChild, parentEle, buildId);
                         });
-                        return; // Don't render the container graph itself, just its children
+                        return; // Children processed
                     }
+                    eleName = 'graph';
                     break;
             }
         }
