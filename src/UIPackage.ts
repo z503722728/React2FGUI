@@ -72,7 +72,7 @@ export default class UIPackage {
                 const compNode = JSON.parse(res.data) as UINode;
                 
                 // We use the generator to build the XML for this sub-component
-                const xmlContent = this._generator.generateComponentXml(compNode.children, this._buildId);
+                const xmlContent = this._generator.generateComponentXml(compNode.children, this._buildId, compNode.width, compNode.height);
                 
                 const fileName = res.name.endsWith('.xml') ? res.name : res.name + '.xml';
                 await fs.writeFile(path.join(packagePath, fileName), xmlContent);
@@ -80,7 +80,10 @@ export default class UIPackage {
         }
 
         // 8. Generate Main XML
-        const mainXml = this._generator.generateComponentXml(rootNodes, this._buildId);
+        // Use the first root node's size for the main component if available, otherwise default
+        const mainWidth = rootNodes.length > 0 ? rootNodes[0].width : 1440;
+        const mainHeight = rootNodes.length > 0 ? rootNodes[0].height : 1024;
+        const mainXml = this._generator.generateComponentXml(rootNodes, this._buildId, mainWidth, mainHeight);
         const packageXml = this._generator.generatePackageXml(this._resources, this._buildId, this._cfg.packName);
         
         await fs.writeFile(path.join(packagePath, 'package.xml'), packageXml);

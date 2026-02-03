@@ -13,8 +13,8 @@ export class XMLGenerator {
      * Generates component XML from a list of UI nodes.
      * Recursively processes children if present in the 'nodes' tree.
      */
-    public generateComponentXml(nodes: UINode[], buildId: string): string {
-        const component = xmlbuilder.create('component').att('size', '1440,1024');
+    public generateComponentXml(nodes: UINode[], buildId: string, width: number = 1440, height: number = 1024): string {
+        const component = xmlbuilder.create('component').att('size', `${width},${height}`);
         const displayList = component.ele('displayList');
 
         nodes.forEach(node => {

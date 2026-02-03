@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<packageDescription id="r2fpidte">
+  <resources>
+    <component id="main_id" name="main.xml" path="/" exported="true"/>
+    <image id="res0" name="icon_res0.svg" path="/img/" exported="true"/>
+    <image id="res1" name="img_res1.png" path="/img/" exported="true"/>
+    <image id="res2" name="img_res2.png" path="/img/" exported="true"/>
+    <image id="res3" name="img_res3.png" path="/img/" exported="true"/>
+    <image id="res4" name="icon_res4.svg" path="/img/" exported="true"/>
+    <image id="res5" name="icon_res5.svg" path="/img/" exported="true"/>
+    <component id="comp_Inputfield_n6_0" name="Inputfield_n6.xml" path="/" exported="true"/>
+    <component id="comp_Tomato_n2_1" name="Tomato_n2.xml" path="/" exported="true"/>
+    <component id="comp_Inputfield_n13_2" name="Inputfield_n13.xml" path="/" exported="true"/>
+    <component id="comp_Ginger_n10_3" name="Ginger_n10.xml" path="/" exported="true"/>
+    <component id="comp_Inputfield_n21_4" name="Inputfield_n21.xml" path="/" exported="true"/>
+    <component id="comp_Onion_n18_5" name="Onion_n18.xml" path="/" exported="true"/>
+    <component id="comp_Button_n36_6" name="Button_n36.xml" path="/" exported="true"/>
+    <component id="comp_Summary_n26_7" name="Summary_n26.xml" path="/" exported="true"/>
+    <component id="comp_Pageheading_n39_8" name="Pageheading_n39.xml" path="/" exported="true"/>
+    <component id="comp_Navigation_n43_9" name="Navigation_n43.xml" path="/" exported="true"/>
+  </resources>
+  <publish name="TestCom">
+    <atlas name="Default" index="0"/>
+  </publish>
+</packageDescription>

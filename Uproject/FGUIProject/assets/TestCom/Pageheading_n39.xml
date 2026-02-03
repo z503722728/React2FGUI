@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<component size="1440,149">
+  <displayList>
+    <text id="n40" name="3items_n40" xy="301,90" size="100,30" fontSize="20" color="black" text="3 items"/>
+    <text id="n41" name="Basket_n41" xy="96,56" size="100,30" fontSize="64" color="black" text="Basket"/>
+    <graph id="n42" name="Divider_n42" xy="96,149" size="1248,0" type="rect" fillColor="#cccccc"/>
+  </displayList>
+</component>

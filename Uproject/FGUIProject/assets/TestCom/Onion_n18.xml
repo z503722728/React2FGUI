@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<component size="821,159">
+  <displayList>
+    <text id="n19" name="Sweetonion_n19" xy="184,24" size="100,30" fontSize="20" color="black" text="Sweet onion"/>
+    <text id="n20" name="$2.99/lb_n20" xy="184,54" size="100,30" fontSize="20" color="#426B1F" text="$2.99 / lb"/>
+    <component id="n21" name="Inputfield_n21" xy="184,95" size="128,40" src="comp_Inputfield_n21_4"/>
+    <text id="n24" name="$14.95_n24" xy="730,24" size="100,30" fontSize="20" color="black" align="right" text="$14.95"/>
+    <image id="n25" name="k8-0_fkPHulv-M-unsplash2_n25" xy="0,0" size="160,160" src="res3"/>
+  </displayList>
+</component>

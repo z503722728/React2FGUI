@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component size="1440,112">
+  <displayList>
+    <text id="n44" name="WorldPeas_n44" xy="96,41" size="100,30" fontSize="32" color="#426B1F" text="World Peas"/>
+    <text id="n45" name="Shop_n45" xy="744,45" size="100,30" fontSize="16" color="black" align="center" text="Shop"/>
+    <text id="n46" name="Newstand_n46" xy="831,45" size="100,30" fontSize="16" color="black" align="center" text="Newstand"/>
+    <text id="n47" name="Whoweare_n47" xy="956,45" size="100,30" fontSize="16" color="black" align="center" text="Who we are"/>
+    <text id="n48" name="Myprofile_n48" xy="1094,45" size="100,30" fontSize="16" color="black" align="center" text="My profile"/>
+    <image id="n49" name="Cartbutton_n49" xy="1218,32" size="100,30" src="res5"/>
+  </displayList>
+</component>

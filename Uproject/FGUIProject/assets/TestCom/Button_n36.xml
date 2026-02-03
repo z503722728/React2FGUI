@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<component size="347,48">
+  <displayList>
+    <text id="n37" name="Continuetopayment_n37" xy="24,14" size="100,30" fontSize="16" color="white" text="Continue to payment"/>
+    <image id="n38" name="Icon_n38" xy="299,8" size="100,30" src="res4"/>
+  </displayList>
+</component>

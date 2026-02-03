@@ -48,8 +48,8 @@ class XMLGenerator {
      * Generates component XML from a list of UI nodes.
      * Recursively processes children if present in the 'nodes' tree.
      */
-    generateComponentXml(nodes, buildId) {
-        const component = xmlbuilder.create('component').att('size', '1440,1024');
+    generateComponentXml(nodes, buildId, width = 1440, height = 1024) {
+        const component = xmlbuilder.create('component').att('size', `${width},${height}`);
         const displayList = component.ele('displayList');
         nodes.forEach(node => {
             this.generateNodeXml(node, displayList, buildId);
