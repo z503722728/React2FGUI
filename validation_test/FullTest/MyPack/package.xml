@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<packageDescription id="r2fr8mfv">
+  <resources>
+    <component id="main_id" name="main.xml" path="/" exported="true"/>
+    <image id="res0" name="icon_n1.svg" path="/img/" exported="true"/>
+    <image id="res1" name="icon_n5.svg" path="/img/" exported="true"/>
+    <image id="res2" name="img_n7.png" path="/img/" exported="true"/>
+    <image id="res3" name="icon_n8.svg" path="/img/" exported="true"/>
+    <image id="res4" name="icon_n11.svg" path="/img/" exported="true"/>
+    <image id="res5" name="img_n14.png" path="/img/" exported="true"/>
+    <image id="res6" name="icon_n15.svg" path="/img/" exported="true"/>
+    <image id="res7" name="icon_n18.svg" path="/img/" exported="true"/>
+    <image id="res8" name="img_n21.png" path="/img/" exported="true"/>
+    <image id="res9" name="icon_n22.svg" path="/img/" exported="true"/>
+    <image id="resa" name="icon_n32.svg" path="/img/" exported="true"/>
+  </resources>
+</packageDescription>
