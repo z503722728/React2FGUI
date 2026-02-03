@@ -2,20 +2,26 @@ import { ObjectType } from "../models/FGUIEnum";
 import { UINode } from "../models/UINode";
 
 /**
- * ReactParser: Parses React (Styled Components) source code into a UINode tree.
+ * ReactParser: Parses React (Styled Components or Inline Styles) source code into a UINode tree.
  */
 export class ReactParser {
     private _nextId = 1;
 
     /**
      * Parses source code and returns a list of root-level UI nodes.
-     * Note: In this phase, we flatten the tree but capture semantic info.
      */
     public parse(code: string, styleMap: Record<string, any>): UINode[] {
         const nodes: UINode[] = [];
         // Extract the main component content first to ignore boilerplate
-        const shoppingCartMatch = code.match(/export const ShoppingCart = \(\) => \{([\s\S]*?)\};/);
-        const targetCode = shoppingCartMatch ? shoppingCartMatch[1] : code;
+        // Match standard React component export pattern
+        const componentMatch = code.match(/export const (\w+) = \(\) => \{([\s\S]*?)\};/) || code.match(/return \(([\s\S]*?)\);/);
+        let targetCode = componentMatch ? (componentMatch[2] || componentMatch[1]) : code;
+        
+        // Basic cleanup of return wrapper if present
+        targetCode = targetCode.trim();
+        if (targetCode.startsWith('(') && targetCode.endsWith(')')) {
+            targetCode = targetCode.substring(1, targetCode.length - 1);
+        }
 
         // Regex to capture opening and closing tags separately to track hierarchy
         // Group 1: Slash (if closing)
@@ -47,7 +53,7 @@ export class ReactParser {
             const isSelfClosing = tagMatch[3] === '/';
             const isStyledTag = fullTagName.startsWith('Styled');
             
-            // 1. Initial Styles from map
+            // 1. Initial Styles from map (for Styled Components)
             let styles = styleMap[fullTagName] || {};
             if (!styles && isStyledTag) {
                 const possibleNames = [`${fullTagName}span`, `${fullTagName}div`, `${fullTagName}button`].map(n => n.toLowerCase());
@@ -55,21 +61,61 @@ export class ReactParser {
                 if (foundKey) styles = styleMap[foundKey];
             }
 
-            // 2. Parse Inline Styles
-            const inlineStyleMatch = tagAttrs.match(/style="([^"]+)"/);
-            if (inlineStyleMatch) {
-                const inlineStyles = this.parseInlineStyle(inlineStyleMatch[1]);
+            // 2. Parse Inline Styles (React style={{...}})
+            // Handles both style="width: 10px" (HTML string) and style={{width: 10}} (React object)
+            let inlineStyleStr = "";
+            const reactStyleMatch = tagAttrs.match(/style=\{\{(.*?)\}\}/s); // React object style
+            const htmlStyleMatch = tagAttrs.match(/style="([^"]+)"/); // HTML string style
+
+            if (reactStyleMatch) {
+                // Convert React object style to CSS string format for parser
+                // e.g. width: 1440, height: 1024 -> width:1440px; height:1024px;
+                const styleObjStr = reactStyleMatch[1];
+                styleObjStr.split(',').forEach(prop => {
+                    const [key, val] = prop.split(':').map(s => s.trim());
+                    if (key && val) {
+                        const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                        const cssVal = !isNaN(Number(val)) && key !== 'opacity' && key !== 'fontWeight' ? `${val}px` : val.replace(/'/g, '');
+                        inlineStyleStr += `${cssKey}:${cssVal};`;
+                    }
+                });
+            } else if (htmlStyleMatch) {
+                inlineStyleStr = htmlStyleMatch[1];
+            }
+
+            if (inlineStyleStr) {
+                const inlineStyles = this.parseInlineStyle(inlineStyleStr);
                 styles = { ...styles, ...inlineStyles };
             }
 
             // 3. Capture Content
             let content = "";
             if (!isSelfClosing) {
-                const closeTag = `</${fullTagName}>`;
+                // Improved matching for nested tags
+                // We need to find the matching closing tag, respecting nesting
+                let depth = 1;
                 const startPos = tagMatch.index + tagMatch[0].length;
-                const endPos = targetCode.indexOf(closeTag, startPos);
-                if (endPos !== -1) {
-                    content = targetCode.substring(startPos, endPos);
+                let currentPos = startPos;
+                
+                // Simple fast-forward to find matching tag
+                // Note: This is a lightweight parser, for complex nesting a real AST parser is better
+                // But for this tool's scope, a balanced counter works for well-formed JSX
+                while (depth > 0 && currentPos < targetCode.length) {
+                    const nextOpen = targetCode.indexOf(`<${fullTagName}`, currentPos);
+                    const nextClose = targetCode.indexOf(`</${fullTagName}>`, currentPos);
+                    
+                    if (nextClose === -1) break; // Malformed or end of file
+
+                    if (nextOpen !== -1 && nextOpen < nextClose) {
+                        depth++;
+                        currentPos = nextOpen + 1;
+                    } else {
+                        depth--;
+                        if (depth === 0) {
+                            content = targetCode.substring(startPos, nextClose);
+                        }
+                        currentPos = nextClose + 1;
+                    }
                 }
             }
 
@@ -108,13 +154,15 @@ export class ReactParser {
 
             // Handle text/media content...
             if (type === ObjectType.Text || type === ObjectType.InputText || type === ObjectType.Button) {
-                node.text = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/g, '').trim();
+                // Strip tags but preserve text content
+                node.text = content.replace(/<[^>]+>/g, '').trim();
             } else if (content.includes('<svg')) {
                 const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
                 if (svgMatch) node.src = svgMatch[0];
             }
 
-            const base64Match = tagAttrs.match(/src="(data:image\/[^;]+;base64,[^"]+)"/);
+            // Handle Base64 in src (both React style src={...} and HTML src="...")
+            const base64Match = tagAttrs.match(/src=["']?(data:image\/[^;]+;base64,[^"'}]+)["']?/);
             if (base64Match) {
                 node.src = base64Match[1];
             }
@@ -122,9 +170,8 @@ export class ReactParser {
             nodes.push(node);
 
             // Push to stack if it's a container that isn't self-closing
-            // Note: We treat even 'leaves' like Text as containers in the stack if they aren't self-closing in React code,
-            // to maintain correct nesting depth, although they won't likely have children.
-            if (!isSelfClosing) {
+            // NOTE: We only push containers (Components/Graphs) to the stack to avoid offsetting relative to a text node
+            if (!isSelfClosing && (type === ObjectType.Component || type === ObjectType.Graph || type === ObjectType.Group)) {
                 parentStack.push({ x: currentX, y: currentY, name: fullTagName });
             }
         }
@@ -143,29 +190,26 @@ export class ReactParser {
         if (lowerName.includes('button')) return ObjectType.Button;
         if (lowerName.includes('input')) return ObjectType.InputText;
         
-        // Image/Loader: Has data-svg-wrapper, has src attribute, OR contains <svg>
+        // Image/Loader
         if (attrs.includes('data-svg-wrapper') || attrs.includes('src=') || content.includes('<svg')) {
             return ObjectType.Image;
         }
         
-        // Text: Has text content AND doesn't look like a container
-        const cleanText = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/gs, '').trim();
-        
-        // If it's a Styled tag AND has text content AND no other complex UI tags inside, it's a Text node
-        if (name.startsWith('Styled') && cleanText.length > 0 && !content.includes('<Styled') && !content.includes('<div')) {
-            return ObjectType.Text;
-        }
-
-        if (lowerName.includes('text') || lowerName.includes('span')) {
+        // Text detection
+        const cleanText = content.replace(/<[^>]+>/g, '').trim();
+        // If it has direct text and no complex children (like divs), it's text
+        if ((lowerName.includes('text') || lowerName.includes('label') || attrs.includes('text=') || cleanText.length > 0) 
+            && !content.includes('<div') && !content.includes('<img')) {
             return ObjectType.Text;
         }
         
-        if (name.startsWith('Styled')) {
-            // Container vs Graph
-            if (!content.includes('<Styled') && !content.includes('<div') && !content.includes('<svg')) {
+        if (name.startsWith('Styled') || name === 'div') {
+            // Container vs Graph (Shape)
+            // If it's a container but empty or only has styling, treat as Graph (Rectangle)
+            if (content.trim() === "") {
                 return ObjectType.Graph;
             }
-            return ObjectType.Component;
+            return ObjectType.Component; // It's a container with children
         }
 
         return ObjectType.Graph; 
@@ -173,13 +217,12 @@ export class ReactParser {
 
     private parseInlineStyle(styleStr: string): Record<string, string> {
         const styles: Record<string, string> = {};
-        // Use a more robust split that handles spaces after colons
         styleStr.split(';').forEach(rule => {
             const parts = rule.split(':');
             if (parts.length < 2) return;
             const key = parts[0].trim().toLowerCase();
             const val = parts[1].trim().replace(/['"]/g, '');
-            // Convert camelCase to kebab-case if needed (e.g. fontSize -> font-size)
+            // Convert camelCase to kebab-case
             const kebabKey = key.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
             styles[kebabKey] = val.replace('px', '');
             if (kebabKey !== key) styles[key] = val.replace('px', '');
