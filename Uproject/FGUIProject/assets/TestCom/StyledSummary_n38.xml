@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<component size="395,318">
+  <displayList>
+    <graph id="n0" name="n0" xy="0,0" size="395,318" type="rect" fillColor="#fafaf5" corner="24" lineSize="2" lineColor="#e6e6e6"/>
+    <text id="n40" name="StyledHeirloomtomatospan_n40" xy="24,24" size="100,30" fontSize="20" color="#000000" text="Order summary"/>
+    <text id="n42" name="StyledSubtotalspan_n42" xy="24,82" size="100,30" fontSize="16" color="#000000" text="Subtotal"/>
+    <text id="n44" name="StyledSubtotalspan_n44" xy="319,82" size="100,30" fontSize="16" color="#000000" text="$27.44"/>
+    <text id="n46" name="StyledSubtotalspan_n46" xy="24,119" size="100,30" fontSize="16" color="#000000" text="Shipping"/>
+    <text id="n48" name="StyledSubtotalspan_n48" xy="326,119" size="100,30" fontSize="16" color="#000000" text="$3.99"/>
+    <text id="n50" name="StyledSubtotalspan_n50" xy="24,156" size="100,30" fontSize="16" color="#000000" text="Tax"/>
+    <text id="n52" name="StyledSubtotalspan_n52" xy="327,156" size="100,30" fontSize="16" color="#000000" text="$2.00"/>
+    <text id="n54" name="Styled1lbspan_n54" xy="24,193" size="100,30" fontSize="16" color="#000000" text="Total"/>
+    <text id="n56" name="Styled1lbspan_n56" xy="314,190" size="100,30" fontSize="16" color="#000000" text="$33.43"/>
+    <component id="n57" name="StyledButton_n57" xy="24,246" size="347,48" corner="8" src="comp_StyledButton_n57_6" fileName="StyledButton_n57.xml"/>
+  </displayList>
+</component>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component size="821,159">
+  <displayList>
+    <graph id="n0" name="n0" xy="0,0" size="821,159" type="rect" fillColor="#fafaf5" corner="24" lineSize="2" lineColor="#e6e6e6"/>
+    <text id="n28" name="StyledHeirloomtomatospan_n28" xy="184,24" size="100,30" fontSize="20" color="#000000" text="Sweet onion"/>
+    <text id="n30" name="Styled599lbspan_n30" xy="184,54" size="100,30" fontSize="20" color="#426b1f" text="$2.99 / lb"/>
+    <component id="n31" name="StyledInputfield01_n31" xy="184,95" size="128,40" corner="20" lineSize="2" lineColor="#0f000000" src="comp_StyledInputfield01_n31_4" fileName="StyledInputfield01_n31.xml"/>
+    <text id="n36" name="StyledHeirloomtomatospan_n36" xy="730,24" size="100,30" fontSize="20" color="#000000" text="$14.95"/>
+    <image id="n37" name="StyledEdoneilAvvdZlhDowAunsplash1_n37" xy="0,0" size="160,160" src="res3" fileName="img/img_res3.png"/>
+  </displayList>
+</component>

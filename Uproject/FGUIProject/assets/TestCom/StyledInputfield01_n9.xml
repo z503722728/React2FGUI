@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<component size="128,40">
+  <displayList>
+    <graph id="n0" name="n0" xy="0,0" size="128,40" type="rect" fillColor="#FFFFFF" corner="20" lineSize="2" lineColor="#0f000000"/>
+    <text id="n11" name="Styled1lbspan_n11" xy="16,9" size="100,30" fontSize="16" color="#000000" text="1 lb"/>
+    <image id="n12" name="Icon_n12" xy="88,4" size="32,32" src="res0" fileName="img/img_res0.svg"/>
+  </displayList>
+</component>

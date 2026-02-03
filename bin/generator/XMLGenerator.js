@@ -125,25 +125,26 @@ class XMLGenerator {
                 case FGUIEnum_1.ObjectType.Graph:
                 case FGUIEnum_1.ObjectType.Group:
                     // If it's a container that wasn't extracted, we flatten its children.
-                    // But first, if the container itself has visual styles, we must render a background graph.
-                    if (attributes.fillColor || (attributes.lineColor && attributes.lineSize)) {
+                    const hasVisuals = attributes.fillColor || (attributes.lineColor && attributes.lineSize);
+                    const hasChildren = node.children && node.children.length > 0;
+                    if (!hasVisuals && !hasChildren) {
+                        return; // Prune empty, style-less containers (e.g. <div></div>)
+                    }
+                    if (hasVisuals) {
                         parentEle.ele('graph', attributes);
                     }
-                    if (node.children && node.children.length > 0) {
+                    if (hasChildren) {
                         // FGUI is a flat list per component.
-                        // Recursive Flattening for non-extracted containers:
-                        // We promote children to the current level, adjusting coordinates.
+                        // Recursive Flattening: we promote children to the current level, adjusting coordinates.
                         node.children.forEach(child => {
                             const flattenedChild = { ...child };
-                            // Note: x/y in UINode are already parsed from 'left'/'top'
                             flattenedChild.x = node.x + child.x;
                             flattenedChild.y = node.y + child.y;
                             this.generateNodeXml(flattenedChild, parentEle, buildId);
                         });
                         return; // Children processed
                     }
-                    eleName = 'graph';
-                    break;
+                    return; // Already added as graph if it had visuals, or pruned if it didn't
             }
         }
         parentEle.ele(eleName, attributes);

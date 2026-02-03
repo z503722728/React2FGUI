@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<packageDescription id="r2ffim9m">
+  <resources>
+    <component id="main_id" name="main.xml" path="/" exported="true"/>
+    <image id="res0" name="img_res0.svg" path="/img/" exported="true"/>
+    <image id="res1" name="img_res1.png" path="/img/" exported="true"/>
+    <image id="res2" name="img_res2.png" path="/img/" exported="true"/>
+    <image id="res3" name="img_res3.png" path="/img/" exported="true"/>
+    <image id="res4" name="img_res4.svg" path="/img/" exported="true"/>
+    <image id="res5" name="img_res5.svg" path="/img/" exported="true"/>
+    <component id="comp_StyledInputfield01_n9_0" name="StyledInputfield01_n9.xml" path="/" exported="true"/>
+    <component id="comp_StyledTomato_n2_1" name="StyledTomato_n2.xml" path="/" exported="true"/>
+    <component id="comp_StyledInputfield01_n19_2" name="StyledInputfield01_n19.xml" path="/" exported="true"/>
+    <component id="comp_StyledGinger_n14_3" name="StyledGinger_n14.xml" path="/" exported="true"/>
+    <component id="comp_StyledInputfield01_n31_4" name="StyledInputfield01_n31.xml" path="/" exported="true"/>
+    <component id="comp_StyledOnion_n26_5" name="StyledOnion_n26.xml" path="/" exported="true"/>
+    <component id="comp_StyledButton_n57_6" name="StyledButton_n57.xml" path="/" exported="true"/>
+    <component id="comp_StyledSummary_n38_7" name="StyledSummary_n38.xml" path="/" exported="true"/>
+    <component id="comp_StyledPageheading_n61_8" name="StyledPageheading_n61.xml" path="/" exported="true"/>
+    <component id="comp_StyledNavigation_n67_9" name="StyledNavigation_n67.xml" path="/" exported="true"/>
+  </resources>
+  <publish name="TestCom">
+    <atlas name="Default" index="0"/>
+  </publish>
+</packageDescription>
