@@ -17,29 +17,45 @@ export class ReactParser {
         const shoppingCartMatch = code.match(/export const ShoppingCart = \(\) => \{([\s\S]*?)\};/);
         const targetCode = shoppingCartMatch ? shoppingCartMatch[1] : code;
 
-        const allTagsRegex = /<(\w+)([^>]*?)(\/?)>/g;
+        // Regex to capture opening and closing tags separately to track hierarchy
+        // Group 1: Slash (if closing)
+        // Group 2: Tag Name
+        // Group 3: Attributes
+        // Group 4: Self-closing slash
+        const tagRegex = /<\/?(\w+)([^>]*?)(\/?)>/g;
         let tagMatch;
 
-        while ((tagMatch = allTagsRegex.exec(targetCode)) !== null) {
-            const fullTagName = tagMatch[1];
-            const tagAttrs = tagMatch[2];
-            const isSelfClosing = tagMatch[3] === '/';
+        // Stack to track parent container coordinates for flattening
+        const parentStack: { x: number, y: number, name: string }[] = [];
 
+        while ((tagMatch = tagRegex.exec(targetCode)) !== null) {
+            const isClosingTag = tagMatch[0].startsWith('</');
+            const fullTagName = tagMatch[1];
+            
             // Skip non-UI/system tags
             if (this.shouldSkipTag(fullTagName)) continue;
 
+            if (isClosingTag) {
+                // Pop from stack if it matches the current parent
+                if (parentStack.length > 0 && parentStack[parentStack.length - 1].name === fullTagName) {
+                    parentStack.pop();
+                }
+                continue;
+            }
+
+            const tagAttrs = tagMatch[2];
+            const isSelfClosing = tagMatch[3] === '/';
             const isStyledTag = fullTagName.startsWith('Styled');
             
             // 1. Initial Styles from map
             let styles = styleMap[fullTagName] || {};
             if (!styles && isStyledTag) {
-                // Try fuzzy matching for common suffixes
                 const possibleNames = [`${fullTagName}span`, `${fullTagName}div`, `${fullTagName}button`].map(n => n.toLowerCase());
                 const foundKey = Object.keys(styleMap).find(k => possibleNames.includes(k.toLowerCase()));
                 if (foundKey) styles = styleMap[foundKey];
             }
 
-            // 2. Parse Inline Styles (Priority over CSS map)
+            // 2. Parse Inline Styles
             const inlineStyleMatch = tagAttrs.match(/style="([^"]+)"/);
             if (inlineStyleMatch) {
                 const inlineStyles = this.parseInlineStyle(inlineStyleMatch[1]);
@@ -60,20 +76,29 @@ export class ReactParser {
             // 4. Determine Object Type
             const type = this.determineObjectType(fullTagName, tagAttrs, content);
 
-            // Robust Coordinate parsing: check styles, then attributes
+            // 5. Calculate Coordinates (Accumulate parent offsets)
             const getCoord = (key: string, def: string) => {
                 const val = styles[key] || styles[key.toLowerCase()] || "";
                 if (!val) return parseInt(def);
-                // Handle potential "px" suffix if it somehow leaked through
                 return parseInt(val.toString().replace('px', ''));
             };
+
+            let currentX = getCoord('left', "0");
+            let currentY = getCoord('top', "0");
+
+            // Add parent offsets
+            if (parentStack.length > 0) {
+                const parent = parentStack[parentStack.length - 1];
+                currentX += parent.x;
+                currentY += parent.y;
+            }
 
             const node: UINode = {
                 id: `n${this._nextId++}`,
                 name: fullTagName,
                 type: type,
-                x: getCoord('left', "0"),
-                y: getCoord('top', "0"),
+                x: currentX,
+                y: currentY,
                 width: getCoord('width', "100"),
                 height: getCoord('height', "30"),
                 styles: styles,
@@ -81,25 +106,27 @@ export class ReactParser {
                 children: [] 
             };
 
-            // Handle text content
+            // Handle text/media content...
             if (type === ObjectType.Text || type === ObjectType.InputText || type === ObjectType.Button) {
-                // Strip all nested tags to get raw text
                 node.text = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/g, '').trim();
-            }
-
-            // Handle Graphic / Image content
-            if (content.includes('<svg')) {
+            } else if (content.includes('<svg')) {
                 const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
                 if (svgMatch) node.src = svgMatch[0];
             }
 
-            // Special case for Base64 in src
             const base64Match = tagAttrs.match(/src="(data:image\/[^;]+;base64,[^"]+)"/);
             if (base64Match) {
                 node.src = base64Match[1];
             }
 
             nodes.push(node);
+
+            // Push to stack if it's a container that isn't self-closing
+            // Note: We treat even 'leaves' like Text as containers in the stack if they aren't self-closing in React code,
+            // to maintain correct nesting depth, although they won't likely have children.
+            if (!isSelfClosing) {
+                parentStack.push({ x: currentX, y: currentY, name: fullTagName });
+            }
         }
 
         return nodes;

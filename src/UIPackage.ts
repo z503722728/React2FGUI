@@ -47,9 +47,8 @@ export default class UIPackage {
         for (const res of this._resources) {
             if (res.data && res.type === 'image') {
                 if (res.isBase64) {
-                    const base64Parts = res.data.split(',');
-                    const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
-                    // Clean possible whitespace or garbage
+                    const commaIdx = res.data.indexOf(',');
+                    const base64Data = commaIdx > -1 ? res.data.substring(commaIdx + 1) : res.data;
                     const buffer = Buffer.from(base64Data.trim(), 'base64');
                     await fs.writeFile(path.join(imgPath, res.name), buffer);
                 } else {
@@ -126,8 +125,20 @@ export default class UIPackage {
 
                 const resId = this.getNextResId();
                 const isBase64 = node.src.startsWith('data:image');
-                const extMatch = node.src.match(/data:image\/(png|jpeg|jpg)/);
-                const ext = isBase64 ? (extMatch ? extMatch[1] : 'png') : 'svg';
+                
+                let ext = 'svg';
+                if (isBase64) {
+                    const mimeMatch = node.src.match(/data:image\/([a-zA-Z0-9+.-]+);/);
+                    if (mimeMatch) {
+                        const mime = mimeMatch[1];
+                        if (mime === 'svg+xml') ext = 'svg';
+                        else if (mime === 'jpeg') ext = 'jpg';
+                        else ext = mime;
+                    } else {
+                        ext = 'png'; // Fallback
+                    }
+                }
+
                 const fileName = isBase64 ? `img_${resId}.${ext}` : `icon_${resId}.svg`;
                 
                 const res: ResourceInfo = {
