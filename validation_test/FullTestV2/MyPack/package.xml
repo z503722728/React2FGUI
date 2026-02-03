@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<packageDescription id="r2f2l1l2">
+  <resources>
+    <component id="main_id" name="main.xml" path="/" exported="true"/>
+    <image id="res0" name="icon_n1.svg" path="/img/" exported="true"/>
+    <image id="res1" name="icon_n5.svg" path="/img/" exported="true"/>
+    <image id="res2" name="icon_n7.svg" path="/img/" exported="true"/>
+    <image id="res3" name="img_n8.png" path="/img/" exported="true"/>
+    <image id="res4" name="icon_n9.svg" path="/img/" exported="true"/>
+    <image id="res5" name="icon_n12.svg" path="/img/" exported="true"/>
+    <image id="res6" name="icon_n14.svg" path="/img/" exported="true"/>
+    <image id="res7" name="img_n16.png" path="/img/" exported="true"/>
+    <image id="res8" name="icon_n17.svg" path="/img/" exported="true"/>
+    <image id="res9" name="icon_n20.svg" path="/img/" exported="true"/>
+    <image id="resa" name="icon_n22.svg" path="/img/" exported="true"/>
+    <image id="resb" name="img_n24.png" path="/img/" exported="true"/>
+    <image id="resc" name="icon_n25.svg" path="/img/" exported="true"/>
+    <image id="resd" name="icon_n35.svg" path="/img/" exported="true"/>
+    <image id="rese" name="icon_n37.svg" path="/img/" exported="true"/>
+  </resources>
+</packageDescription>

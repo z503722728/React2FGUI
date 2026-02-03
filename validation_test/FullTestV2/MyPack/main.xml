@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<component size="1440,1024">
+  <displayList>
+    <loader id="n1" name="StyledTomato" xy="96,301" size="821,159" url="ui://r2f2l1l2res0" fill="scaleFree"/>
+    <text id="n2" name="StyledHeirloomtomato" xy="0,0" size="100,30" fontSize="20" color="black" text="Heirloom tomato"/>
+    <text id="n3" name="Styled599" xy="0,0" size="100,30" fontSize="20" color="black" text="$5.99"/>
+    <text id="n4" name="Styled599lb" xy="0,0" size="100,30" fontSize="20" color="#426B1F" text="$5.99 / lb"/>
+    <loader id="n5" name="StyledInputfield" xy="184,95" size="128,40" url="ui://r2f2l1l2res1" fill="scaleFree"/>
+    <text id="n6" name="Styled1lb" xy="0,0" size="100,30" fontSize="16" color="black" text="1 lb"/>
+    <loader id="n7" name="div" xy="88,4" size="100,30" url="ui://r2f2l1l2res2" fill="scaleFree"/>
+    <loader id="n8" name="StyledEdoneilAvvdZlhDowAunsplash1" xy="0,0" size="160,160" url="ui://r2f2l1l2res3" fill="scaleFree"/>
+    <loader id="n9" name="StyledGinger" xy="96,491" size="821,159" url="ui://r2f2l1l2res4" fill="scaleFree"/>
+    <text id="n10" name="StyledOrganicginger" xy="0,0" size="100,30" fontSize="20" color="black" text="Organic ginger"/>
+    <text id="n11" name="Styled1299lb" xy="0,0" size="100,30" fontSize="20" color="#426B1F" text="$12.99 / lb"/>
+    <loader id="n12" name="StyledInputfield01" xy="184,95" size="128,40" url="ui://r2f2l1l2res5" fill="scaleFree"/>
+    <text id="n13" name="Styled05lb" xy="0,0" size="100,30" fontSize="16" color="black" text="0.5 lb"/>
+    <loader id="n14" name="div" xy="88,4" size="100,30" url="ui://r2f2l1l2res6" fill="scaleFree"/>
+    <text id="n15" name="Styled650" xy="0,0" size="100,30" fontSize="20" color="black" text="$6.50"/>
+    <loader id="n16" name="StyledNoonbrewziCb4EKmakunsplash" xy="0,0" size="160,160" url="ui://r2f2l1l2res7" fill="scaleFree"/>
+    <loader id="n17" name="StyledOnion" xy="96,681" size="821,159" url="ui://r2f2l1l2res8" fill="scaleFree"/>
+    <text id="n18" name="StyledSweetonion" xy="0,0" size="100,30" fontSize="20" color="black" text="Sweet onion"/>
+    <text id="n19" name="Styled299lb" xy="0,0" size="100,30" fontSize="20" color="#426B1F" text="$2.99 / lb"/>
+    <loader id="n20" name="StyledInputfield02" xy="184,95" size="128,40" url="ui://r2f2l1l2res9" fill="scaleFree"/>
+    <text id="n21" name="Styled5lb" xy="0,0" size="100,30" fontSize="16" color="black" text="5 lb"/>
+    <loader id="n22" name="div" xy="88,4" size="100,30" url="ui://r2f2l1l2resa" fill="scaleFree"/>
+    <text id="n23" name="Styled1495" xy="0,0" size="100,30" fontSize="20" color="black" text="$14.95"/>
+    <loader id="n24" name="StyledK80fkPHulvMunsplash2" xy="0,0" size="160,160" url="ui://r2f2l1l2resb" fill="scaleFree"/>
+    <loader id="n25" name="StyledSummary" xy="949,301" size="395,318" url="ui://r2f2l1l2resc" fill="scaleFree"/>
+    <text id="n26" name="StyledOrdersummary" xy="0,0" size="100,30" fontSize="20" color="black" text="Order summary"/>
+    <text id="n27" name="StyledSubtotal" xy="0,0" size="100,30" fontSize="16" color="black" text="Subtotal"/>
+    <text id="n28" name="Styled2744" xy="0,0" size="100,30" fontSize="16" color="black" text="$27.44"/>
+    <text id="n29" name="StyledShipping" xy="0,0" size="100,30" fontSize="16" color="black" text="Shipping"/>
+    <text id="n30" name="Styled399" xy="0,0" size="100,30" fontSize="16" color="black" text="$3.99"/>
+    <text id="n31" name="StyledTax" xy="0,0" size="100,30" fontSize="16" color="black" text="Tax"/>
+    <text id="n32" name="Styled200" xy="0,0" size="100,30" fontSize="16" color="black" text="$2.00"/>
+    <text id="n33" name="StyledTotal" xy="0,0" size="100,30" fontSize="16" color="black" text="Total"/>
+    <text id="n34" name="Styled3343" xy="0,0" size="100,30" fontSize="16" color="black" text="$33.43"/>
+    <loader id="n35" name="StyledButton" xy="24,246" size="347,48" url="ui://r2f2l1l2resd" fill="scaleFree"/>
+    <text id="n36" name="StyledContinuetopayment" xy="0,0" size="100,30" fontSize="16" color="white" text="Continue to payment"/>
+    <loader id="n37" name="div" xy="299,8" size="100,30" url="ui://r2f2l1l2rese" fill="scaleFree"/>
+    <graph id="n38" name="StyledPageheading" xy="0,112" size="1440,149" type="rect" fillColor="white"/>
+    <text id="n39" name="Styled3items" xy="0,0" size="100,30" fontSize="20" color="black" text="3 items"/>
+    <text id="n40" name="StyledBasket" xy="0,0" size="100,30" fontSize="64" color="black" text="Basket"/>
+    <graph id="n42" name="StyledNavigation" xy="0,0" size="1440,112" type="rect" fillColor="#cccccc"/>
+    <text id="n43" name="StyledWorldPeas" xy="0,0" size="100,30" fontSize="32" color="#426B1F" text="World Peas"/>
+    <text id="n44" name="StyledShop" xy="0,0" size="100,30" fontSize="16" color="black" text="Shop"/>
+    <text id="n45" name="StyledNewstand" xy="0,0" size="100,30" fontSize="16" color="black" text="Newstand"/>
+    <text id="n46" name="StyledWhoweare" xy="0,0" size="100,30" fontSize="16" color="black" text="Who we are"/>
+    <text id="n47" name="StyledMyprofile" xy="0,0" size="100,30" fontSize="16" color="black" text="My profile"/>
+    <component id="n48" name="StyledCartbutton" xy="1218,32" size="126,48" extention="Button">
+      <Button title=""/>
+    </component>
+    <text id="n49" name="StyledBasket3" xy="0,0" size="100,30" fontSize="16" color="white" text="Basket (3)"/>
+  </displayList>
+</component>
