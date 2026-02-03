@@ -25,6 +25,16 @@ export class XMLGenerator {
                     eleName = 'text';
                     break;
                 case ObjectType.Image:
+                    eleName = 'image';
+                    if (node.src) {
+                        attributes.src = node.src;
+                        // Image tag doesn't use 'fill' property like Loader
+                        delete attributes.fill;
+                        
+                        // Try to find resource to add fileName hint if possible (optional but good)
+                        // For now, minimal required is src=ID
+                    }
+                    break;
                 case ObjectType.Loader:
                     eleName = 'loader';
                     if (node.src) {
