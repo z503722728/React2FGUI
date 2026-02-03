@@ -13,10 +13,14 @@ export class ReactParser {
      */
     public parse(code: string, styleMap: Record<string, any>): UINode[] {
         const nodes: UINode[] = [];
+        // Extract the main component content first to ignore boilerplate
+        const shoppingCartMatch = code.match(/export const ShoppingCart = \(\) => \{([\s\S]*?)\};/);
+        const targetCode = shoppingCartMatch ? shoppingCartMatch[1] : code;
+
         const allTagsRegex = /<(\w+)([^>]*?)(\/?)>/g;
         let tagMatch;
 
-        while ((tagMatch = allTagsRegex.exec(code)) !== null) {
+        while ((tagMatch = allTagsRegex.exec(targetCode)) !== null) {
             const fullTagName = tagMatch[1];
             const tagAttrs = tagMatch[2];
             const isSelfClosing = tagMatch[3] === '/';
@@ -29,12 +33,13 @@ export class ReactParser {
             // 1. Initial Styles from map
             let styles = styleMap[fullTagName] || {};
             if (!styles && isStyledTag) {
+                // Try fuzzy matching for common suffixes
                 const possibleNames = [`${fullTagName}span`, `${fullTagName}div`, `${fullTagName}button`].map(n => n.toLowerCase());
                 const foundKey = Object.keys(styleMap).find(k => possibleNames.includes(k.toLowerCase()));
                 if (foundKey) styles = styleMap[foundKey];
             }
 
-            // 2. Parse Inline Styles
+            // 2. Parse Inline Styles (Priority over CSS map)
             const inlineStyleMatch = tagAttrs.match(/style="([^"]+)"/);
             if (inlineStyleMatch) {
                 const inlineStyles = this.parseInlineStyle(inlineStyleMatch[1]);
@@ -46,9 +51,9 @@ export class ReactParser {
             if (!isSelfClosing) {
                 const closeTag = `</${fullTagName}>`;
                 const startPos = tagMatch.index + tagMatch[0].length;
-                const endPos = code.indexOf(closeTag, startPos);
+                const endPos = targetCode.indexOf(closeTag, startPos);
                 if (endPos !== -1) {
-                    content = code.substring(startPos, endPos);
+                    content = targetCode.substring(startPos, endPos);
                 }
             }
 
@@ -68,10 +73,14 @@ export class ReactParser {
                 children: [] 
             };
 
-            // Handle text or specific content
-            if (type === ObjectType.Text || type === ObjectType.InputText) {
-                node.text = content.replace(/<[^>]+>/g, '').trim();
-            } else if (content.includes('<svg')) {
+            // Handle text content
+            if (type === ObjectType.Text || type === ObjectType.InputText || type === ObjectType.Button) {
+                // Strip all nested tags to get raw text
+                node.text = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/g, '').trim();
+            }
+
+            // Handle Graphic / Image content
+            if (content.includes('<svg')) {
                 const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
                 if (svgMatch) node.src = svgMatch[0];
             }
@@ -96,36 +105,28 @@ export class ReactParser {
     private determineObjectType(name: string, attrs: string, content: string): ObjectType {
         const lowerName = name.toLowerCase();
         
-        // 1. Explicit Button check
         if (lowerName.includes('button')) return ObjectType.Button;
-        
-        // 2. Explicit Input check
         if (lowerName.includes('input')) return ObjectType.InputText;
         
-        // 3. Image/Loader check: Has data-svg-wrapper, has src attribute, OR contains <svg>
+        // Image/Loader: Has data-svg-wrapper, has src attribute, OR contains <svg>
         if (attrs.includes('data-svg-wrapper') || attrs.includes('src=') || content.includes('<svg')) {
             return ObjectType.Image;
         }
         
-        // 4. Text check: If it has direct text content after stripping HTML
-        // Also ensure it doesn't contain nested divs that would make it a component
+        // Text: Has text content AND doesn't look like a container
         const cleanText = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/gs, '').trim();
         if ((lowerName.includes('text') || lowerName.includes('span') || cleanText.length > 0) && !content.includes('<div') && !content.includes('<Styled')) {
             return ObjectType.Text;
         }
         
-        // 5. Styled Tag Defaulting Logic
         if (name.startsWith('Styled')) {
-            // If it's a styled container but has no UI children, it's just a shape (Graph)
+            // Container vs Graph
             if (!content.includes('<Styled') && !content.includes('<div') && !content.includes('<svg')) {
                 return ObjectType.Graph;
             }
-            // If it contains other elements, treat as a generic Component (will be flattened or exported later)
-            // But if it's just a wrapper for a known leaf, let it be a Component for now
             return ObjectType.Component;
         }
 
-        // 6. Generic HTML tag
         return ObjectType.Graph; 
     }
 

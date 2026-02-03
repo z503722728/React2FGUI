@@ -45,7 +45,7 @@ export default class UIPackage {
         
         // 4. Write Binary Resources (PNG/SVG)
         for (const res of this._resources) {
-            if (res.data) {
+            if (res.data && res.type === 'image') {
                 if (res.isBase64) {
                     const base64Parts = res.data.split(',');
                     const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
@@ -69,14 +69,9 @@ export default class UIPackage {
         console.log(`✅ Success! Standardized FGUI Package generated at: ${packagePath}`);
     }
 
-    /**
-     * Generates individual XML files for sub-components (e.g. Buttons).
-     */
     private async generateSubComponents(nodes: UINode[], packagePath: string): Promise<void> {
         for (const node of nodes) {
             if (node.type === ObjectType.Button) {
-                // For a Button, FGUI expects a specific XML structure.
-                // We'll create a simple button component XML.
                 const buttonXml = `<?xml version="1.0" encoding="utf-8"?>
 <component size="${node.width},${node.height}" extention="Button">
   <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
@@ -88,22 +83,21 @@ export default class UIPackage {
       <relation target="" sidePair="width-width,height-height"/>
     </text>
   </displayList>
-  <Button/>
+  <Button downEffect="scale" downEffectValue="0.95"/>
 </component>`;
                 
                 const fileName = `${node.name}.xml`;
                 await fs.writeFile(path.join(packagePath, fileName), buttonXml);
                 
                 // Add to resources so it's registered in package.xml
-                // In FGUI, components in package.xml usually don't have .xml extension in the 'name' attribute
+                const resId = this.getNextResId();
                 this._resources.push({
-                    id: node.id + "_id", // Give it a unique res id
+                    id: resId,
                     name: node.name, 
                     type: 'component'
                 });
                 
-                // Map the node's src to this component ID so the loader/component tag in main.xml points here
-                node.src = node.id + "_id";
+                node.src = resId;
             }
         }
     }
@@ -119,12 +113,19 @@ export default class UIPackage {
     }
 
     private processResources(nodes: UINode[]): void {
+        const uniqueSrcMap = new Map<string, string>(); // Avoid duplicate resource exports
+
         nodes.forEach(node => {
-            if (node.src && node.type !== ObjectType.Button) { // Buttons are handled in generateSubComponents
+            if (node.src && node.type !== ObjectType.Button) {
+                if (uniqueSrcMap.has(node.src)) {
+                    node.src = uniqueSrcMap.get(node.src);
+                    return;
+                }
+
                 const resId = this.getNextResId();
                 const isBase64 = node.src.startsWith('data:image');
                 const ext = isBase64 ? (node.src.match(/data:image\/(png|jpeg|jpg)/)?.[1] || 'png') : 'svg';
-                const fileName = isBase64 ? `img_${node.id}.${ext}` : `icon_${node.id}.svg`;
+                const fileName = isBase64 ? `img_${resId}.${ext}` : `icon_${resId}.svg`;
                 
                 const res: ResourceInfo = {
                     id: resId,
@@ -135,7 +136,7 @@ export default class UIPackage {
                 };
                 
                 this._resources.push(res);
-                // Update node src to point to internal resource ID for the generator
+                uniqueSrcMap.set(node.src, resId);
                 node.src = resId; 
             }
         });
