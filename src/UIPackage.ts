@@ -190,6 +190,12 @@ export default class UIPackage {
         // We capture the whole svg block
         const svgRegex = /(<svg[\s\S]*?<\/svg>)/g;
         processedCode = processedCode.replace(svgRegex, (match, svgContent) => {
+            // Capture dimensions if present
+            const widthMatch = svgContent.match(/width=["'](\d+)["']/);
+            const heightMatch = svgContent.match(/height=["'](\d+)["']/);
+            const w = widthMatch ? widthMatch[1] : "";
+            const h = heightMatch ? heightMatch[1] : "";
+
             // Normalize whitespace for consistent hashing
             const normalizedSvg = svgContent.replace(/\s+/g, ' ').trim();
             const hash = this.hashContent(normalizedSvg);
@@ -200,10 +206,13 @@ export default class UIPackage {
                 this._imagePlaceholderMap.set(placeholder, svgContent); 
                 imgCount++;
             }
-            // We replace with a simple img tag so the parser sees it as a leaf node with src
-            // But ReactParser treats tags, so we use a self-closing placeholder tag
-            // Actually, best to act like an <img src="...">
-            return `<img src="${placeholder}" />`;
+
+            // Construct replacement img tag with dimensions if found
+            let replacement = `<img src="${placeholder}"`;
+            if (w) replacement += ` width="${w}"`;
+            if (h) replacement += ` height="${h}"`;
+            replacement += ` />`;
+            return replacement;
         });
 
         console.log(`[ImageDedupe] Pre-processed ${imgCount} unique images/SVGs into placeholders.`);

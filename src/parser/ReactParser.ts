@@ -196,10 +196,45 @@ export class ReactParser {
         // Determine Type
         const type = this.determineObjectType(tagName, attrs, innerContent);
 
-        // Coordinates
+        // --- Metadata Extraction (for Images/SVG wrappers) ---
+        let extractedSrc = "";
+        let extractedWidth: string | undefined;
+        let extractedHeight: string | undefined;
+
+        if (type === ObjectType.Image) {
+            // Check attrs first
+            const base64Match = attrs.match(/src=["']?(data:image\/[^;]+;base64,[^"'}]+)["']?/);
+            const srcMatch = attrs.match(/src=["']?([^"'\s}]+)["']?/);
+            
+            if (base64Match) extractedSrc = base64Match[1];
+            else if (srcMatch) extractedSrc = srcMatch[1];
+
+            // If still missing, check innerContent (e.g. <img src="__IMG_..." width="126" height="48" />)
+            if (!extractedSrc || extractedSrc.includes('{')) { // Skip React state/var if possible
+                const innerImgMatch = innerContent.match(/<img[^>]+src=["']?([^"'\s}]+)["']?/);
+                if (innerImgMatch) {
+                    extractedSrc = innerImgMatch[1];
+                    const wMatch = innerContent.match(/width=["'](\d+)["']/);
+                    const hMatch = innerContent.match(/height=["'](\d+)["']/);
+                    if (wMatch) extractedWidth = wMatch[1];
+                    if (hMatch) extractedHeight = hMatch[1];
+                }
+            }
+
+            if (!extractedSrc && innerContent.includes('<svg')) {
+                const svgMatch = innerContent.match(/<svg[\s\S]*?<\/svg>/);
+                if (svgMatch) extractedSrc = svgMatch[0];
+            }
+        }
+
+        // Coordinates Helper
         const getCoord = (key: string, def: string) => {
             const val = styles[key] || styles[key.toLowerCase()] || "";
-            if (!val) return parseInt(def);
+            if (!val) {
+                if (key === 'width' && extractedWidth) return parseInt(extractedWidth);
+                if (key === 'height' && extractedHeight) return parseInt(extractedHeight);
+                return parseInt(def);
+            }
             return parseInt(val.toString().replace('px', ''));
         };
 
@@ -216,6 +251,7 @@ export class ReactParser {
             width: getCoord('width', "100"),
             height: getCoord('height', "30"),
             styles,
+            src: extractedSrc,
             customProps: this.parseAttributes(attrs),
             children: [],
             parent: parent
@@ -224,25 +260,6 @@ export class ReactParser {
         // Content handling
         if (type === ObjectType.Text || type === ObjectType.InputText || type === ObjectType.Button) {
             node.text = innerContent.replace(/<[^>]+>/g, '').trim();
-        } else if (innerContent.includes('<svg')) {
-            const svgMatch = innerContent.match(/<svg[\s\S]*?<\/svg>/);
-            if (svgMatch) node.src = svgMatch[0];
-        }
-
-        // Extract src: Base64 OR Placeholder OR Generic file path
-        // 1. Try Base64/Data URI
-        const base64Match = attrs.match(/src=["']?(data:image\/[^;]+;base64,[^"'}]+)["']?/);
-        if (base64Match) {
-            node.src = base64Match[1];
-        } else {
-            // 2. Try Placeholder or Generic Path
-            const srcMatch = attrs.match(/src=["']?([^"'\s}]+)["']?/);
-            if (srcMatch) {
-                const val = srcMatch[1];
-                if (val.startsWith('__IMG_') || val.startsWith('http') || val.endsWith('.png') || val.endsWith('.jpg') || val.endsWith('.svg')) {
-                    node.src = val;
-                }
-            }
         }
 
         return node;
