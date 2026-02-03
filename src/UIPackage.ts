@@ -83,11 +83,15 @@ export default class UIPackage {
         }
 
         // 2. Scan for Styled Tags
-        const jsxTagRegex = /<(Styled\w+)/g;
+        // We use a broader regex to capture attributes like src
+        const jsxTagRegex = /<(Styled\w+)([^>]*?)(\/?)>/g;
         let tagMatch;
         let nodeIndex = 1;
         while ((tagMatch = jsxTagRegex.exec(code)) !== null) {
             const tagName = tagMatch[1];
+            const tagAttrs = tagMatch[2];
+            const isSelfClosing = tagMatch[3] === '/';
+            
             if (tagName === 'StyledShoppingcart') continue; 
 
             let styles = styleMap[tagName];
@@ -102,12 +106,8 @@ export default class UIPackage {
             const xy = `${styles.left || 0},${styles.top || 0}`;
             const size = `${styles.width || 100},${styles.height || 30}`;
 
-            const startPos = tagMatch.index;
-            const openTagEnd = code.indexOf('>', startPos);
-            const tagFullHeader = code.substring(startPos, openTagEnd + 1);
-            
-            // Robust Base64 Extraction from src attribute
-            const base64SrcMatch = tagFullHeader.match(/src="data:image\/(png|jpeg|jpg);base64,([^"]+)"/);
+            // --- BASE64 EXTRACTION FROM ATTRS ---
+            const base64SrcMatch = tagAttrs.match(/src="data:image\/(png|jpeg|jpg);base64,([^"]+)"/);
             if (base64SrcMatch) {
                 const ext = base64SrcMatch[1];
                 const base64Content = base64SrcMatch[2];
@@ -118,7 +118,7 @@ export default class UIPackage {
                     id: resId,
                     name: fileName,
                     type: 'image',
-                    data: `data:image/${ext};base64,${base64Content}`,
+                    data: base64Content,
                     isBase64: true
                 });
 
@@ -130,14 +130,14 @@ export default class UIPackage {
                 continue;
             }
 
-            // Handle content
-            const isSelfClosing = code[openTagEnd - 1] === '/';
+            // Handle content if not self-closing
             let content = "";
             if (!isSelfClosing) {
                 const closeTag = `</${tagName}>`;
-                const endPos = code.indexOf(closeTag, openTagEnd);
+                const startPos = tagMatch.index + tagMatch[0].length;
+                const endPos = code.indexOf(closeTag, startPos);
                 if (endPos !== -1) {
-                    content = code.substring(openTagEnd + 1, endPos);
+                    content = code.substring(startPos, endPos);
                 }
             }
 
