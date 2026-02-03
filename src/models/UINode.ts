@@ -24,6 +24,10 @@ export interface UINode {
     
     // Hierarchy
     children: UINode[];
+    parent?: UINode;
+    
+    // Component Extraction Flag
+    asComponent?: boolean;
 }
 
 /**

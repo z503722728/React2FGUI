@@ -44,7 +44,7 @@ npm link
 
 # Run conversion
 # Syntax: node bin/cli.js <reactFile> <outPath> <packName> <mainComponentName>
-node bin/cli.js Input/input.tsx ./output MyPackage MainUI
+node bin/cli.js .\Input\input.tsx .\Uproject\FGUIProject\assets TestCom Test
 ```
 
 **Note**: The `bin/cli.js` entry point will automatically check for changes in `src/` and rebuild the project using `tsc` if necessary.

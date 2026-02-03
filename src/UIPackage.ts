@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ExportConfig } from './Common';
 import { ReactParser } from './parser/ReactParser';
 import { XMLGenerator } from './generator/XMLGenerator';
+import { SubComponentExtractor } from './generator/SubComponentExtractor';
 import { ResourceInfo, UINode } from './models/UINode';
 import { ObjectType } from './models/FGUIEnum';
 
@@ -14,6 +15,7 @@ export default class UIPackage {
     
     private _parser = new ReactParser();
     private _generator = new XMLGenerator();
+    private _extractor = new SubComponentExtractor();
 
     constructor(cfg: ExportConfig) {
         this._cfg = cfg;
@@ -25,25 +27,31 @@ export default class UIPackage {
     }
 
     public async exportPackage(): Promise<void> {
-        console.log(`🚀 Transforming React into FGUI (Architecture V2): ${this._cfg.packName}`);
+        console.log(`🚀 Transforming React into FGUI (Architecture V2 - Recursive): ${this._cfg.packName}`);
         
         const code = await fs.readFile(this._cfg.reactFile, 'utf-8');
         
         // 1. Extract Styles
         const styleMap = this.extractStyles(code);
         
-        // 2. Parse Source into Semantic Tree
-        const nodes = this._parser.parse(code, styleMap);
+        // 2. Parse Source into Hierarchical Tree
+        const rootNodes = this._parser.parse(code, styleMap);
         
-        // 3. Process Resources (Identify & Prepare for export)
-        this.processResources(nodes);
+        // 3. Process Resources (Images) on the full tree
+        this.processResourcesRecursive(rootNodes);
         
+        // 4. Extract Sub-Components (The smart part)
+        // This modifies rootNodes in-place (replacing containers with refs) and returns new component resources
+        const componentResources = this._extractor.extract(rootNodes);
+        this._resources.push(...componentResources);
+
+        // 5. File System Setup
         const packagePath = path.join(this._cfg.outPath, this._cfg.packName);
         const imgPath = path.join(packagePath, 'img');
         await fs.ensureDir(packagePath);
         await fs.ensureDir(imgPath);
         
-        // 4. Write Binary Resources (PNG/SVG)
+        // 6. Write Images
         for (const res of this._resources) {
             if (res.data && res.type === 'image') {
                 if (res.isBase64) {
@@ -57,50 +65,29 @@ export default class UIPackage {
             }
         }
 
-        // 5. Generate Component XMLs (Handles sub-components like Buttons)
-        await this.generateSubComponents(nodes, packagePath);
+        // 7. Write Sub-Component XMLs
+        for (const res of this._resources) {
+            if (res.type === 'component' && res.data) {
+                // res.data contains the JSON string of the UINode tree for this component
+                const compNode = JSON.parse(res.data) as UINode;
+                
+                // We use the generator to build the XML for this sub-component
+                const xmlContent = this._generator.generateComponentXml(compNode.children, this._buildId);
+                
+                const fileName = res.name.endsWith('.xml') ? res.name : res.name + '.xml';
+                await fs.writeFile(path.join(packagePath, fileName), xmlContent);
+            }
+        }
 
-        // 6. Generate XML Files using standardized Generator
-        const componentXml = this._generator.generateComponentXml(nodes, this._buildId);
+        // 8. Generate Main XML
+        const mainXml = this._generator.generateComponentXml(rootNodes, this._buildId);
         const packageXml = this._generator.generatePackageXml(this._resources, this._buildId, this._cfg.packName);
         
         await fs.writeFile(path.join(packagePath, 'package.xml'), packageXml);
-        await fs.writeFile(path.join(packagePath, 'main.xml'), componentXml);
+        await fs.writeFile(path.join(packagePath, 'main.xml'), mainXml);
         
-        console.log(`✅ Success! Standardized FGUI Package generated at: ${packagePath}`);
-    }
-
-    private async generateSubComponents(nodes: UINode[], packagePath: string): Promise<void> {
-        for (const node of nodes) {
-            if (node.type === ObjectType.Button) {
-                const buttonXml = `<?xml version="1.0" encoding="utf-8"?>
-<component size="${node.width},${node.height}" extention="Button">
-  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
-  <displayList>
-    <graph id="n1" name="bg" xy="0,0" size="${node.width},${node.height}" type="rect" fillColor="${node.styles.background || '#426B1F'}">
-      <gearColor controller="button" pages="0,1,2,3" values="${node.styles.background || '#426B1F'},#333333,${node.styles.background || '#426B1F'},#333333"/>
-    </graph>
-    <text id="n2" name="title" xy="0,0" size="${node.width},${node.height}" fontSize="${node.styles['font-size'] || node.styles.fontSize || 12}" color="${node.styles.color || '#ffffff'}" align="center" vAlign="middle" autoSize="none" text="${node.text || ''}">
-      <relation target="" sidePair="width-width,height-height"/>
-    </text>
-  </displayList>
-  <Button downEffect="scale" downEffectValue="0.95"/>
-</component>`;
-                
-                const fileName = `${node.name}.xml`;
-                await fs.writeFile(path.join(fileName.includes('..') ? 'error.xml' : path.join(packagePath, fileName)), buttonXml);
-                
-                // Add to resources so it's registered in package.xml
-                const resId = this.getNextResId();
-                this._resources.push({
-                    id: resId,
-                    name: node.name, 
-                    type: 'component'
-                });
-                
-                node.src = resId;
-            }
-        }
+        console.log(`✅ Success! Generated FGUI Package with ${componentResources.length} extracted sub-components.`);
+        console.log(`📂 Output: ${packagePath}`);
     }
 
     private extractStyles(code: string): Record<string, any> {
@@ -113,47 +100,53 @@ export default class UIPackage {
         return styleMap;
     }
 
-    private processResources(nodes: UINode[]): void {
+    private processResourcesRecursive(nodes: UINode[]): void {
         const uniqueSrcMap = new Map<string, string>(); 
 
-        nodes.forEach(node => {
-            if (node.src && node.type !== ObjectType.Button) {
+        const visit = (node: UINode) => {
+            if (node.src && node.type !== ObjectType.Button && node.type !== ObjectType.Component) {
+                // Handle Images / Loaders
                 if (uniqueSrcMap.has(node.src)) {
                     node.src = uniqueSrcMap.get(node.src);
-                    return;
-                }
+                } else {
+                    const resId = this.getNextResId();
+                    const isBase64 = node.src.startsWith('data:image');
+                    let ext = 'svg';
+                    if (isBase64) {
+                        const mimeMatch = node.src.match(/data:image\/([a-zA-Z0-9+.-]+);/);
+                        if (mimeMatch) {
+                            const mime = mimeMatch[1];
+                            if (mime === 'svg+xml') ext = 'svg';
+                            else if (mime === 'jpeg') ext = 'jpg';
+                            else ext = mime;
+                        } else {
+                            ext = 'png';
+                        }
+                    } else if (node.src.endsWith('.png')) ext = 'png';
+                    else if (node.src.endsWith('.jpg')) ext = 'jpg';
 
-                const resId = this.getNextResId();
-                const isBase64 = node.src.startsWith('data:image');
-                
-                let ext = 'svg';
-                if (isBase64) {
-                    const mimeMatch = node.src.match(/data:image\/([a-zA-Z0-9+.-]+);/);
-                    if (mimeMatch) {
-                        const mime = mimeMatch[1];
-                        if (mime === 'svg+xml') ext = 'svg';
-                        else if (mime === 'jpeg') ext = 'jpg';
-                        else ext = mime;
-                    } else {
-                        ext = 'png'; // Fallback
-                    }
+                    const fileName = isBase64 ? `img_${resId}.${ext}` : `icon_${resId}.${ext}`;
+                    
+                    const res: ResourceInfo = {
+                        id: resId,
+                        name: fileName,
+                        type: 'image',
+                        data: node.src,
+                        isBase64: isBase64
+                    };
+                    
+                    this._resources.push(res);
+                    uniqueSrcMap.set(node.src, resId);
+                    node.src = resId; 
                 }
-
-                const fileName = isBase64 ? `img_${resId}.${ext}` : `icon_${resId}.svg`;
-                
-                const res: ResourceInfo = {
-                    id: resId,
-                    name: fileName,
-                    type: 'image',
-                    data: node.src,
-                    isBase64: isBase64
-                };
-                
-                this._resources.push(res);
-                uniqueSrcMap.set(node.src, resId);
-                node.src = resId; 
             }
-        });
+
+            if (node.children) {
+                node.children.forEach(child => visit(child));
+            }
+        };
+
+        nodes.forEach(root => visit(root));
     }
 
     private parseCss(css: string): any {
@@ -165,7 +158,6 @@ export default class UIPackage {
             const key = parts[0].trim().toLowerCase();
             const val = parts[1].trim();
             styles[key] = val.replace('px', '');
-            // Also store camelCase for compatibility
             const camelKey = key.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
             if (camelKey !== key) styles[camelKey] = styles[key];
         });
