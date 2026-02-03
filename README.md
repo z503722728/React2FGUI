@@ -9,9 +9,9 @@ Enable a "One-Click" workflow from Figma design to a fully functional FairyGUI `
 
 ## 🛠️ Prerequisites
 
-This tool relies on the **Figma to Code (AI Export)** plugin to generate the source data.
+This tool relies on the **Figma to Code** plugin to generate the source data.
 
-1.  **Figma Plugin**: [Figma to Code (AI Export)](https://www.figma.com/community/plugin/1590340205277776745/figma-to-code-ai-export)
+1.  **Figma Plugin**: [Figma to Code](https://www.figma.com/community/plugin/842128343887142055)
 2.  **Export Configuration**: 
     To ensure compatible output, please use the following settings in the plugin:
     *   **Format**: `React (JSX)`
