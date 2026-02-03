@@ -16,7 +16,7 @@ export class PropertyMapper {
         const attr: Record<string, string> = {
             id: node.id,
             name: node.name,
-            xy: `${s.left || node.x},${s.top || node.y}`,
+            xy: `${node.x},${node.y}`,
             size: `${s.width || node.width},${s.height || node.height}`
         };
 
