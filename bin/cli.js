@@ -44,7 +44,8 @@ function getAllFiles(dir) {
 if (checkNeedsBuild()) {
     console.log('🔄 Detected changes in src, rebuilding...');
     const tsc = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-    const buildResult = spawnSync(tsc, ['tsc'], { cwd: rootDir, stdio: 'inherit' });
+    console.log(`🛠️ Executing: ${tsc} tsc`);
+    const buildResult = spawnSync(tsc, ['tsc'], { cwd: rootDir, stdio: 'inherit', shell: true });
     if (buildResult.status !== 0) {
         console.error('❌ Build failed. Please check your TypeScript code.');
         process.exit(1);
