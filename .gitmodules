@@ -1,0 +1,3 @@
+[submodule "libs/fgui-restore"]
+	path = libs/fgui-restore
+	url = https://github.com/krapnikkk/fgui-restore.git
