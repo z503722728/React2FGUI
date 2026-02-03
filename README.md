@@ -1,6 +1,6 @@
 # React2FGUI 🚀
 
-> **A powerful tool to convert Figma-exported React (Styled Components) directly into FairyGUI project packages.**
+> **A powerful tool to convert Figma-exported React (Inline Styles or Styled Components) directly into FairyGUI project packages.**
 
 This tool automates the bridge between UI designers (Figma) and game developers (FairyGUI), bypassing manual renaming or PSD middle-man files.
 
@@ -14,7 +14,7 @@ This tool relies on the **Figma to Code (AI Export)** plugin to generate the sou
 1.  **Figma Plugin**: [Figma to Code (AI Export)](https://www.figma.com/community/plugin/1590340205277776745/figma-to-code-ai-export)
 2.  **Export Configuration**: 
     To ensure compatible output, please use the following settings in the plugin:
-    *   **Format**: `styled-components`
+    *   **Format**: `React (JSX)`
     *   **Styling Options**: 
         *   [x] Layer names
         *   [x] Color Variables
@@ -25,34 +25,40 @@ This tool relies on the **Figma to Code (AI Export)** plugin to generate the sou
 
 ## 🏗️ Architecture
 
-1. **Parser**: Analyzes `styled-components` React code to extract nodes, styles (CSS), and hierarchy.
-2. **Mapper**: Automatically maps React component semantics to FGUI elements:
-    *   `StyledButton` -> `GButton`
-    *   `StyledSpan` / Text content -> `GTextField`
-    *   `StyledDiv` / Containers -> `GGraph` (Rect) or `GComponent`
-3. **Generator**: Produces FGUI-compatible `package.xml` and component `.xml` files.
+1. **Parser (V2)**: Advanced semantic parser that supports both `styled-components` and standard React `style={{...}}` objects. It maintains a parent-stack to correctly calculate absolute coordinates for nested elements.
+2. **Mapper**: Automatically maps React component semantics and CSS properties to FGUI elements and attributes:
+    *   `button` / `Button` -> `GButton`
+    *   `span` / Text content -> `GTextField`
+    *   `div` / Containers -> `GGraph` (Rect) or `GComponent`
+    *   `img` / `svg` -> `GImage` (with automatic Base64 extraction)
+3. **Generator**: Produces FGUI-compatible `package.xml` and component `.xml` files, including automatic sub-component generation for buttons.
 
 ## 🚀 Usage
 
 ```bash
 # Install dependencies
-bun install
+npm install
 
-# Link the CLI tool
-bun link
+# Link the CLI tool (optional)
+npm link
 
 # Run conversion
-# Syntax: react2fgui <reactFile> <outPath> <packName> <mainComponentName>
-react2fgui input.tsx ./output MyPackage MainUI
+# Syntax: node bin/cli.js <reactFile> <outPath> <packName> <mainComponentName>
+node bin/cli.js Input/input.tsx ./output MyPackage MainUI
 ```
 
+**Note**: The `bin/cli.js` entry point will automatically check for changes in `src/` and rebuild the project using `tsc` if necessary.
+
 ## 🎯 Features
-- [x] **Absolute Positioning**: Accurate mapping of `left`, `top`, `width`, and `height`.
-- [x] **Smart Semantics**: Automatic detection of Buttons and Input fields based on component names.
-- [x] **Text Sync**: Full support for font size, color, and raw text extraction.
-- [x] **CLI Tool**: Quick validation and batch processing.
-- [ ] **SVG Support**: Auto-extracting `<svg>` paths into FGUI shapes (In Progress).
-- [ ] **FGUI Plugin**: Ready-to-use plugin for the FGUI Editor (Planned).
+- [x] **Absolute Positioning**: Accurate mapping of `left`, `top`, `width`, and `height` with hierarchy support.
+- [x] **Smart Semantics**: Automatic detection of Buttons and Input fields.
+- [x] **Base64 Image Extraction**: Automatically converts embedded Base64 strings into physical `.png` or `.svg` files.
+- [x] **Automatic Rebuild**: The CLI tool auto-detects source changes and recompiles.
+- [x] **Unique Naming**: Ensures all components in the FGUI display list have unique names.
+- [x] **Sub-Component Generation**: Automatically creates separate `.xml` files for UI components like Buttons.
+
+## 📄 Documentation & Rules
+Detailed mapping rules can be found in [libs/FGUI_MAPPING_RULES.md](./libs/FGUI_MAPPING_RULES.md).
 
 ## 📄 License
 MIT
