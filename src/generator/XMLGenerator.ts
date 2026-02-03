@@ -34,6 +34,9 @@ export class XMLGenerator {
                     break;
                 case ObjectType.Button:
                     eleName = 'component';
+                    if (node.src) {
+                        attributes.src = node.src; // Points to the resId of the component
+                    }
                     break;
                 case ObjectType.Component:
                     // If we reach here, we'll use a graph as a placeholder since sub-component XMLs aren't generated yet
@@ -52,11 +55,9 @@ export class XMLGenerator {
 
             const element = displayList.ele(eleName, attributes);
 
-            // Special sub-elements
-            if (node.type === ObjectType.Button) {
-                element.att('extention', 'Button');
-                element.ele('Button', { title: node.text || "" });
-            }
+            // Special sub-elements for top-level MainUI Buttons
+            // (In FGUI, if a component is used as a Button inside another component, 
+            // the <Button> tag is optional here unless overriding props)
         });
 
         return component.end({ pretty: true });
@@ -73,12 +74,19 @@ export class XMLGenerator {
         resNode.ele('component', { id: 'main_id', name: 'main.xml', path: '/', exported: 'true' });
 
         resources.forEach(res => {
-            resNode.ele(res.type, { 
+            const resAttr: any = { 
                 id: res.id, 
                 name: res.name, 
                 path: res.type === 'image' ? '/img/' : '/', 
                 exported: 'true' 
-            });
+            };
+            
+            // FGUI expects component names in package.xml to have the .xml extension
+            if (res.type === 'component' && !res.name.endsWith('.xml')) {
+                resAttr.name = res.name + '.xml';
+            }
+
+            resNode.ele(res.type, resAttr);
         });
 
         const publish = pkgDesc.ele('publish', { name: packName });

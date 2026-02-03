@@ -4,6 +4,7 @@ import { ExportConfig } from './Common';
 import { ReactParser } from './parser/ReactParser';
 import { XMLGenerator } from './generator/XMLGenerator';
 import { ResourceInfo, UINode } from './models/UINode';
+import { ObjectType } from './models/FGUIEnum';
 
 export default class UIPackage {
     private _cfg: ExportConfig;
@@ -55,7 +56,10 @@ export default class UIPackage {
             }
         }
 
-        // 5. Generate XML Files using standardized Generator
+        // 5. Generate Component XMLs (Handles sub-components like Buttons)
+        await this.generateSubComponents(nodes, packagePath);
+
+        // 6. Generate XML Files using standardized Generator
         const componentXml = this._generator.generateComponentXml(nodes, this._buildId);
         const packageXml = this._generator.generatePackageXml(this._resources, this._buildId, this._cfg.packName);
         
@@ -63,6 +67,45 @@ export default class UIPackage {
         await fs.writeFile(path.join(packagePath, 'main.xml'), componentXml);
         
         console.log(`✅ Success! Standardized FGUI Package generated at: ${packagePath}`);
+    }
+
+    /**
+     * Generates individual XML files for sub-components (e.g. Buttons).
+     */
+    private async generateSubComponents(nodes: UINode[], packagePath: string): Promise<void> {
+        for (const node of nodes) {
+            if (node.type === ObjectType.Button) {
+                // For a Button, FGUI expects a specific XML structure.
+                // We'll create a simple button component XML.
+                const buttonXml = `<?xml version="1.0" encoding="utf-8"?>
+<component size="${node.width},${node.height}" extention="Button">
+  <controller name="button" pages="0,up,1,down,2,over,3,selectedOver" selected="0"/>
+  <displayList>
+    <graph id="n1" name="bg" xy="0,0" size="${node.width},${node.height}" type="rect" fillColor="${node.styles.background || '#426B1F'}">
+      <gearColor controller="button" pages="0,1,2,3" values="${node.styles.background || '#426B1F'},#333333,${node.styles.background || '#426B1F'},#333333"/>
+    </graph>
+    <text id="n2" name="title" xy="0,0" size="${node.width},${node.height}" fontSize="${node.styles.fontSize || 12}" color="${node.styles.color || '#ffffff'}" align="center" vAlign="middle" autoSize="none" text="${node.text || ''}">
+      <relation target="" sidePair="width-width,height-height"/>
+    </text>
+  </displayList>
+  <Button/>
+</component>`;
+                
+                const fileName = `${node.name}.xml`;
+                await fs.writeFile(path.join(packagePath, fileName), buttonXml);
+                
+                // Add to resources so it's registered in package.xml
+                // In FGUI, components in package.xml usually don't have .xml extension in the 'name' attribute
+                this._resources.push({
+                    id: node.id + "_id", // Give it a unique res id
+                    name: node.name, 
+                    type: 'component'
+                });
+                
+                // Map the node's src to this component ID so the loader/component tag in main.xml points here
+                node.src = node.id + "_id";
+            }
+        }
     }
 
     private extractStyles(code: string): Record<string, any> {
@@ -77,7 +120,7 @@ export default class UIPackage {
 
     private processResources(nodes: UINode[]): void {
         nodes.forEach(node => {
-            if (node.src) {
+            if (node.src && node.type !== ObjectType.Button) { // Buttons are handled in generateSubComponents
                 const resId = this.getNextResId();
                 const isBase64 = node.src.startsWith('data:image');
                 const ext = isBase64 ? (node.src.match(/data:image\/(png|jpeg|jpg)/)?.[1] || 'png') : 'svg';
