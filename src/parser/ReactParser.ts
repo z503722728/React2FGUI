@@ -259,7 +259,21 @@ export class ReactParser {
         
         if (lowerName.includes('button')) return ObjectType.Button;
         if (lowerName.includes('input')) return ObjectType.InputText;
-        
+        if (lowerName === 'img') return ObjectType.Image;
+
+        // Image/SVG Detection (Highest priority after explicit tags)
+        const isImage = attrs.includes('data-svg-wrapper') || 
+            attrs.includes('src="data:image/') || 
+            attrs.includes('src=\'data:image/') ||
+            attrs.includes('src="__IMG_') || 
+            attrs.includes('__IMG_') ||
+            (name !== 'div' && content.includes('<svg')) || 
+            (name === 'div' && content.trim().startsWith('<svg'));
+
+        if (isImage) {
+            return ObjectType.Image;
+        }
+
         if (name.startsWith('Styled') || name === 'div' || name === 'span' || name.match(/^h[1-6]$/) || name === 'p') {
             // Check if it should be Text
             // If it has no child tags (simple text)
@@ -269,16 +283,10 @@ export class ReactParser {
             }
 
             // Check if it's effectively empty or just text
-            // But if it's a structural div/styled component, we usually want it as a Component if it has children tags
             if (content.trim() === "" && !attrs.includes('data-layer')) {
-                // Empty div with no data-layer -> likely just a spacer or invisible
                 return ObjectType.Graph; 
             }
             return ObjectType.Component; 
-        }
-
-        if (attrs.includes('data-svg-wrapper') || attrs.includes('src=') || (name !== 'div' && content.includes('<svg')) || (name === 'div' && content.trim().startsWith('<svg')) || content.includes('__IMG_') || attrs.includes('__IMG_')) {
-            return ObjectType.Image;
         }
 
         const cleanText = content.replace(/<[^>]+>/g, '').trim();
