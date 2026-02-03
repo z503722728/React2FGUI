@@ -5,8 +5,8 @@
   "bin": {
     "react2fgui": "bin/cli.js"
   },
-  "main": "bin/main.js",
   "scripts": {
+    "start": "node bin/cli.js",
     "build": "tsc",
     "watch": "tsc -w"
   },
