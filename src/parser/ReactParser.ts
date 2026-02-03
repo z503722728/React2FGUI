@@ -41,10 +41,7 @@ export class ReactParser {
                 styles = { ...styles, ...inlineStyles };
             }
 
-            // 3. Determine Object Type
-            const type = this.determineObjectType(fullTagName, tagAttrs);
-
-            // 4. Capture Content
+            // 3. Capture Content
             let content = "";
             if (!isSelfClosing) {
                 const closeTag = `</${fullTagName}>`;
@@ -54,6 +51,9 @@ export class ReactParser {
                     content = code.substring(startPos, endPos);
                 }
             }
+
+            // 4. Determine Object Type
+            const type = this.determineObjectType(fullTagName, tagAttrs, content);
 
             const node: UINode = {
                 id: `n${this._nextId++}`,
@@ -65,7 +65,7 @@ export class ReactParser {
                 height: parseInt(styles.height || "30"),
                 styles: styles,
                 customProps: this.parseAttributes(tagAttrs),
-                children: [] // Nested hierarchy can be improved in future phases
+                children: [] 
             };
 
             // Handle text or specific content
@@ -93,12 +93,31 @@ export class ReactParser {
         return skip.includes(name);
     }
 
-    private determineObjectType(name: string, attrs: string): ObjectType {
+    private determineObjectType(name: string, attrs: string, content: string): ObjectType {
         const lowerName = name.toLowerCase();
+        
+        // 1. Explicit Button check
         if (lowerName.includes('button')) return ObjectType.Button;
+        
+        // 2. Explicit Input check
         if (lowerName.includes('input')) return ObjectType.InputText;
-        if (attrs.includes('data-svg-wrapper') || attrs.includes('src=')) return ObjectType.Image;
-        if (lowerName.includes('text') || lowerName.includes('span')) return ObjectType.Text;
+        
+        // 3. Image/Loader check: Has data-svg-wrapper, has src attribute, OR contains <svg>
+        if (attrs.includes('data-svg-wrapper') || attrs.includes('src=') || content.includes('<svg')) {
+            return ObjectType.Image;
+        }
+        
+        // 4. Text check: If it has direct text content after stripping HTML
+        const cleanText = content.replace(/<[^>]+>.*?<\/[^>]+>/gs, '').replace(/<[^>]+>/gs, '').trim();
+        if ((lowerName.includes('text') || lowerName.includes('span') || cleanText.length > 0) && !content.includes('<div') && !content.includes('<Styled')) {
+            return ObjectType.Text;
+        }
+        
+        // 5. Default to Graph if it's a styled container with no children, otherwise Component
+        if (content.trim() === "" && name.startsWith('Styled')) {
+            return ObjectType.Graph;
+        }
+
         return ObjectType.Component;
     }
 
